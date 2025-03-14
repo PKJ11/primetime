@@ -1,5 +1,4 @@
 const Game = require("../models/Game");
-const Player = require("../models/Player");
 const { getIO } = require("../utils/socket");
 
 // Create a new game
@@ -77,5 +76,7 @@ const getGamePlayers = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+
 
 module.exports = { createGame, startGame, getGameState ,getGamePlayers };

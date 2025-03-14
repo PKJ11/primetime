@@ -9,14 +9,17 @@ import ResultPage from "./pages/ResultPage";
 function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/register" element={<AdminRegistration />} />
-        <Route path="/admin-login" element={<AdminLogin />} />
-        <Route path="/admin-dashboard" element={<AdminDashboard />} />
-        <Route path="/join-game" element={<UserLogin />} />
-        <Route path="/game-lobby/:gameCode" element={<MatchLobby />} />
-        <Route path="/results/:gameCode" element={<ResultPage />} />
-      </Routes>
+      {/* Use a div with max-width of 1024px */}
+      {/* <div className="max-w-[1024px] p-0"> */}
+        <Routes>
+          <Route path="/register" element={<AdminRegistration />} />
+          <Route path="/admin-login" element={<AdminLogin />} />
+          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/join-game" element={<UserLogin />} />
+          <Route path="/game-lobby/:gameCode" element={<MatchLobby />} />
+          <Route path="/results" element={<ResultPage />} />
+        </Routes>
+      {/* </div> */}
     </Router>
   );
 }

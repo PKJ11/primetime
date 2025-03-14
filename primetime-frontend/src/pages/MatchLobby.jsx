@@ -1,130 +1,341 @@
-import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
-import io from "socket.io-client";
-import axios from "axios";
+import React, { useState, useEffect } from "react";
+import primeTimeLogo from "../assets/images/primetimelogo.svg";
+import Card from "../Components/Card";
+
+const writeToLogFile = (message) => {
+  const logMessage = `${new Date().toISOString()}: ${message}\n`;
+  const blob = new Blob([logMessage], { type: "text/plain" });
+  const file = new File([blob], "log.txt", { type: "text/plain" });
+};
+
+const downloadLogFile = () => {
+  let file = localStorage.getItem("logFile");
+  const blob = new Blob([file], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.setAttribute("download", "log.txt");
+  document.body.appendChild(link);
+  link.click();
+};
+
+const clearLogFile = () => {
+  localStorage.removeItem("logFile");
+  console.log("Log file cleared.");
+};
+
+const appendToLogFile = (message) => {
+  const logMessage = `${new Date().toISOString()}: ${message}\n`;
+  const blob = new Blob([logMessage], { type: "text/plain" });
+  let existingLogs = localStorage.getItem("logFile");
+  if (!existingLogs) {
+    existingLogs = "";
+  }
+  const updatedLogs = existingLogs + logMessage;
+  localStorage.setItem("logFile", updatedLogs);
+};
 
 const MatchLobby = () => {
-  const { gameCode } = useParams();
   const [players, setPlayers] = useState([]);
-  const [messages, setMessages] = useState([]); // State to store chat messages
-  const [messageInput, setMessageInput] = useState(""); // State for the chat input field
-  const [playerName, setPlayerName] = useState(""); // State to store the player's name
+  const [floorCards, setFloorCards] = useState([]);
+  const [currentPlayerIndex, setCurrentPlayerIndex] = useState(null);
+  const [winner, setWinner] = useState(null);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [gameOver, setGameOver] = useState(false);
+  const [numOfPlayers, setNumOfPlayers] = useState(5);
+  const [stackArray, setStackArray] = useState([]);
+  const [initialTotalCards, setInitialTotalCards] = useState(5);
 
-  useEffect(() => {
-    const socket = io("http://localhost:5000", {
-      transports: ["websocket"],
-    });
+  const availableCards = [
+    1, 2, 2, 2, 2, 2, 3, 3, 3, 4, 5, 5, 6, 7, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34,
+    35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
+    54, 55, 56, 57, 58, 59, 60,
+  ];
 
-    // Fetch the player's name from local storage or state
-    const name = localStorage.getItem("playerName") || "Guest"; // Replace "Guest" with a default name if needed
-    setPlayerName(name);
-
-    // Fetch existing players when joining the lobby
-    const fetchPlayers = async () => {
-      try {
-        const response = await axios.get(`http://localhost:5000/api/game/${gameCode}/players`);
-        setPlayers(response.data.players);
-      } catch (error) {
-        console.error("Failed to fetch players:", error);
+  const isPrime = (num) => {
+    if (num <= 1) {
+      return false;
+    }
+    for (let i = 2; i <= Math.sqrt(num); i++) {
+      if (num % i === 0) {
+        return false;
       }
-    };
+    }
+    return true;
+  };
 
-    fetchPlayers();
+  const getAllPrimeFactors = (num) => {
+    const factors = [];
+    for (let i = 2; i <= num; i++) {
+      while (isPrime(i) && num % i === 0) {
+        factors.push(i);
+        num /= i;
+      }
+    }
+    return factors;
+  };
 
-    // Debug connection events
-    socket.on("connect", () => {
-      console.log("Connected to Socket.io server");
+  const areAllPrimeFactorsOnFloor = (num) => {
+    if (isPrime(num)) {
+      return true;
+    }
+    const primeFactors = getAllPrimeFactors(num);
+
+    return primeFactors.every((factor) => {
+      const factorCountOnFloor = floorCards.reduce((acc, floorCard) => {
+        return availableCards[floorCard] === factor ? acc + 1 : acc;
+      }, 0);
+
+      return (
+        factorCountOnFloor >= primeFactors.filter((pf) => pf === factor).length
+      );
     });
+  };
 
-    socket.on("connect_error", (err) => {
-      console.error("Socket.io connection error:", err);
-    });
+  const getCardFromStack = (currentPlayerIndex) => {
+    const updatedHand = players[currentPlayerIndex];
+    if (stackArray.length > 0) {
+      const updatedStackArray = [...stackArray];
+      let card = updatedStackArray.shift();
+      updatedHand.push(card);
+      setStackArray(updatedStackArray);
+    }
+    const updatedPlayers = [...players];
+    updatedPlayers[currentPlayerIndex] = updatedHand;
+    setPlayers(updatedPlayers);
+  };
 
-    // Join the game room
-    socket.emit("joinGame", gameCode);
-    console.log(`Joined game room: ${gameCode}`);
+  const playTurn = (indexToRemove, playedHand) => {
+    if (gameOver) {
+      setErrorMessage("The game is over. Please start a new game.");
+      return;
+    }
+    if (currentPlayerIndex !== playedHand - 1) {
+      setErrorMessage(
+        `It's not Player ${playedHand}'s turn! Let Player ${
+          currentPlayerIndex + 1
+        } play the game!!`
+      );
+      return;
+    }
 
-    // Listen for updates to the player list
-    socket.on("updatePlayers", (players) => {
-      console.log("Updated players list:", players);
-      setPlayers(players);
-    });
+    const currentPlayerHand = players[currentPlayerIndex];
+    const numberPlayed = currentPlayerHand[indexToRemove];
 
-    // Listen for chat messages
-    socket.on("receiveMessage", ({ playerName, message }) => {
-      console.log(`Received message from ${playerName}: ${message}`);
-      setMessages((prev) => [...prev, { playerName, message }]);
-    });
+    if (!floorCards.includes(0) && numberPlayed !== 1) {
+      setErrorMessage("Please choose 1 !");
+      return;
+    }
 
-    // Cleanup on unmount
-    return () => {
-      socket.disconnect();
-    };
-  }, [gameCode]);
+    if (!isPrime(numberPlayed) && !areAllPrimeFactorsOnFloor(numberPlayed)) {
+      setErrorMessage("Invalid card chosen!");
+      return;
+    }
 
-  // Handle sending a chat message
-  const sendMessage = () => {
-    if (messageInput.trim()) {
-      const socket = io("http://localhost:5000", {
-        transports: ["websocket"],
-      });
-
-      // Emit the chat message to the backend with the player's name
-      socket.emit("sendMessage", {
-        gameCode,
-        playerName, // Use the actual player name
-        message: messageInput,
-      });
-
-      // Clear the input field
-      setMessageInput("");
+    let index;
+    for (let i = 0; i < 68; i++) {
+      if (availableCards[i] == numberPlayed && !floorCards.includes(i)) {
+        index = i;
+        break;
+      }
+    }
+    const updatedHand = [...currentPlayerHand];
+    setFloorCards([...floorCards, index]);
+    updatedHand.splice(indexToRemove, 1);
+    if (stackArray.length > 0) {
+      const updatedStackArray = [...stackArray];
+      let card = updatedStackArray.shift();
+      updatedHand.push(card);
+      setStackArray(updatedStackArray);
+    }
+    const updatedPlayers = [...players];
+    updatedPlayers[currentPlayerIndex] = updatedHand;
+    setPlayers(updatedPlayers);
+    const playerName = `Player ${currentPlayerIndex + 1}`;
+    const logEntry = `Turn ${playedHand}: ${playerName} played card ${updatedHand[indexToRemove]}\n`;
+    appendToLogFile(logEntry);
+    setErrorMessage("");
+    checkWinCondition(playedHand);
+    setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
+    if (updatedHand.length === 0) {
+      setWinner(playedHand);
+      const playerName = `Player ${playedHand}`;
+      const winLogEntry = `Player ${playerName} won the game!\n`;
+      appendToLogFile(winLogEntry);
+      setGameOver(true);
     }
   };
 
-  return (
-    <div className="flex flex-col items-center justify-center h-screen bg-gray-100">
-      <h1 className="text-2xl font-bold mb-6">Match Lobby</h1>
-      <p className="text-lg">Game Code: {gameCode}</p>
-      <div className="mt-4">
-        <h2 className="text-xl font-bold">Players:</h2>
-        <ul>
-          {players.map((player, index) => (
-            <li key={index} className="text-lg">
-              {player}
-            </li>
-          ))}
-        </ul>
-      </div>
+  const checkWinCondition = (playedHand) => {
+    if (players[playedHand - 1].length === 0) {
+      setWinner(playedHand);
+      const playerName = `Player ${playedHand}`;
+      const logEntry = `Player ${playerName} won the game!\n`;
+      appendToLogFile(logEntry);
+      setGameOver(true);
+      return;
+    }
+  };
 
-      {/* Chat Section */}
-      <div className="mt-8 w-96">
-        <h2 className="text-xl font-bold mb-4">Chat</h2>
-        <div className="bg-white p-4 rounded-lg shadow-lg">
-          {/* Chat Messages */}
-          <div className="h-48 overflow-y-auto mb-4">
-            {messages.map((msg, index) => (
-              <div key={index} className="mb-2">
-                <span className="font-bold">{msg.playerName}: </span>
-                <span>{msg.message}</span>
-              </div>
-            ))}
+  const belongsToPlayer = (card, playerIndex) => {
+    return players[playerIndex].includes(card);
+  };
+
+  const canPlayAnyCard = (playerIndex) => {
+    const currentPlayerHand = players[playerIndex];
+    return currentPlayerHand.some((card) => {
+      return isPrime(card) || areAllPrimeFactorsOnFloor(card) || card === 1;
+    });
+  };
+
+  const startGame = () => {
+    if (numOfPlayers < 1 || numOfPlayers > 6) {
+      setErrorMessage("Number of players must be in between 1 and 6");
+      return;
+    }
+
+    if (initialTotalCards < 1 || initialTotalCards > 8) {
+      setErrorMessage("Total cards must be in between 1 and 8");
+      return;
+    }
+
+    const shuffledCards = shuffle(availableCards);
+    const maxIndex = initialTotalCards * numOfPlayers - 1;
+    const indexOfOne = shuffledCards.indexOf(1);
+    const randomIndex = Math.floor(Math.random() * (maxIndex + 1));
+    [shuffledCards[indexOfOne], shuffledCards[randomIndex]] = [
+      shuffledCards[randomIndex],
+      shuffledCards[indexOfOne],
+    ];
+    clearLogFile();
+    appendToLogFile("Start of the Game !");
+    appendToLogFile("");
+    setErrorMessage("");
+    setWinner(null);
+
+    const hands = Array.from({ length: numOfPlayers }, () => []);
+
+    const cardsPerPlayer = initialTotalCards;
+    for (let i = 0; i < numOfPlayers; i++) {
+      hands[i] = shuffledCards.slice(
+        i * cardsPerPlayer,
+        (i + 1) * cardsPerPlayer
+      );
+    }
+
+    setStackArray(
+      shuffledCards.slice(
+        numOfPlayers * initialTotalCards,
+        shuffledCards.length
+      )
+    );
+
+    setPlayers(hands);
+    setFloorCards([]);
+    setGameOver(false);
+  };
+
+  const shuffle = (array) => {
+    let currentIndex = array.length;
+    let temporaryValue, randomIndex;
+
+    while (currentIndex !== 0) {
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex -= 1;
+
+      temporaryValue = array[currentIndex];
+      array[currentIndex] = array[randomIndex];
+      array[randomIndex] = temporaryValue;
+    }
+
+    return array;
+  };
+
+  useEffect(() => {
+    for (let i = 0; i < players.length; i++) {
+      if (belongsToPlayer(1, i)) {
+        setCurrentPlayerIndex(i);
+        break;
+      }
+    }
+  }, [players]);
+  const playerss = [
+    { id: 2, name: "Player 02", cardsLeft: 4, active: false },
+    { id: 3, name: "Player 03", cardsLeft: 4, active: false },
+    { id: 4, name: "", cardsLeft: 4, active: true },
+    { id: 5, name: "Player 05", cardsLeft: 4, active: false },
+    { id: 6, name: "Player 06", cardsLeft: 4, active: false },
+  ];
+
+  return (
+    <div className="bg" style={{ backgroundColor: "#134E68" }}>
+      <div
+        className="max-w-4xl p-6 rounded-lg shadow-md"
+        style={{
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+        }}
+      >
+        <div className="w-[952px]">
+          <div className="mb-6 bg-white p-4 rounded-lg">
+            <img
+              src={primeTimeLogo}
+              alt="PrimeTime Logo"
+              style={{
+                width: "120.61px",
+                height: "55.96px",
+                marginBottom: "20px",
+              }}
+            />
+
+            <div
+              className="flex flex-wrap"
+              style={{
+                width: "921.56px",
+                height: "729.79px",
+                position: "relative",
+              }}
+            >
+              {availableCards.map((card, index) => (
+                <div key={index} className="p-2">
+                  <Card
+                    number={card}
+                    label={floorCards.includes(index) ? "ON FLOOR" : ""}
+                  />
+                </div>
+              ))}
+            </div>
           </div>
 
-          {/* Chat Input */}
-          <div className="flex">
-            <input
-              type="text"
-              placeholder="Type a message..."
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              className="flex-1 p-2 border rounded-l-lg focus:outline-none"
-            />
-            <button
-              onClick={sendMessage}
-              className="bg-blue-500 text-white p-2 rounded-r-lg hover:bg-blue-600"
-            >
-              Send
-            </button>
+          <div className=" p-4 rounded-lg max-w-3xl mx-auto text-white bg-white w-[952px]">
+            <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-md w-[100%]">
+              {playerss.map((player, index) => (
+                <div key={player.id} className="flex flex-col items-center">
+                  {player.name && (
+                    <p className="text-xs text-gray-800 font-bold">
+                      {player.name}
+                    </p>
+                  )}
+                  <div
+                    className={`relative w-10 h-10 rounded-full flex items-center justify-center ${
+                      player.active ? "bg-green-500" : "bg-gray-400"
+                    }`}
+                  >
+                    <span className="text-white font-bold">👤</span>
+                  </div>
+                  <div
+                    className={`text-xs mt-1 px-2 py-1 rounded-md ${
+                      player.active
+                        ? "bg-green-500 text-white"
+                        : "bg-gray-200 text-gray-800"
+                    }`}
+                  >
+                    {player.cardsLeft} Cards Left
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

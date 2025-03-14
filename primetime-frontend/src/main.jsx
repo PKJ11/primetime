@@ -5,6 +5,8 @@ import App from './App.jsx'
 
 createRoot(document.getElementById('root')).render(
   <StrictMode>
+   {/* <div className="max-w-[1024px]  p-0"> */}
     <App />
+    {/* </div> */}
   </StrictMode>,
 )
