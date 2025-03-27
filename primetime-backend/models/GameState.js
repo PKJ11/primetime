@@ -4,6 +4,7 @@ const mongoose = require("mongoose");
 const gameStateSchema = new mongoose.Schema({
   gameCode: { type: String, required: true, unique: true },
   players: [{ type: mongoose.Schema.Types.ObjectId, ref: "Player" }],
+  scores: { type: Map, of: Number, default: {} }, // Add scores
   floorCards: [{ type: Number }],
   currentPlayerIndex: { type: Number, default: 0 },
   stackArray: [{ type: Number }],

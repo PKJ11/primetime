@@ -36,7 +36,7 @@ const startGame = async (req, res) => {
 
     // Notify all players via Socket.io
     const io = getIO();
-    io.to(gameCode).emit("gameStarted", { message: "The game has started!" });
+    io.to(gameCode).emit("startGame", { message: "The game has started!" });
 
     res.json({ message: "Game started successfully" });
   } catch (err) {

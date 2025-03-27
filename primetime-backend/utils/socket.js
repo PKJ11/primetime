@@ -1,5 +1,7 @@
 const socketio = require("socket.io");
 const GameState = require("../models/GameState");
+const Player = require("../models/Player");
+const Game = require("../models/Game");
 
 let io;
 
@@ -16,156 +18,262 @@ const initSocket = (server) => {
   io.on("connection", (socket) => {
     console.log("New client connected:", socket.id);
 
-    // Handle joining a game room
-    socket.on("joinGame", (gameCode) => {
+    // Join a game room
+    socket.on("joinGame", async ({ gameCode, playerName, grade }) => {
       socket.join(gameCode);
-      console.log(`Player joined game room: ${gameCode}`);
-      socket.emit("assignPlayerId", socket.id); // Assign a unique player ID
+      console.log(`Player ${socket.id} joined game room: ${gameCode}`);
+
+      const game = await Game.findOne({ code: gameCode }).populate("players");
+      if (!game) {
+        console.log(`Game ${gameCode} not found`);
+        socket.emit("error", "Game not found");
+        return;
+      }
+
+      if (game.players.length >= game.settings.maxPlayers) {
+        console.log(`Game ${gameCode} is full`);
+        socket.emit("error", "Game is full");
+        return;
+      }
+
+      let player = await Player.findOne({ gameCode, name: playerName });
+      if (!player) {
+        player = new Player({
+          name: playerName,
+          gameCode,
+          grade,
+          socketId: socket.id,
+          cards: [],
+          score: 0,
+        });
+        await player.save();
+        game.players.push(player._id);
+        await game.save();
+        console.log(`Created new player:`, player);
+      } else {
+        player.socketId = socket.id;
+        await player.save();
+        console.log(`Updated existing player with socketId:`, player);
+      }
+
+      socket.emit("assignPlayerId", player._id.toString());
+      const playerNames = game.players.map((p) => p.name);
+      io.to(gameCode).emit("updatePlayers", playerNames);
+
+      console.log(`Players in game ${gameCode}: ${game.players.length}/${game.settings.maxPlayers}`);
+      if (game.players.length === game.settings.maxPlayers && !game.isActive) {
+        console.log(`Starting game ${gameCode} automatically`);
+        startGame(gameCode);
+      }
     });
 
-    // Handle starting the game
-    socket.on("startGame", async (gameCode) => {
+    // Start the game
+    const startGame = async (gameCode) => {
       try {
-        console.log(`Starting game for room: ${gameCode}`); // Debugging
+        const game = await Game.findOne({ code: gameCode }).populate("players");
+        if (!game || game.isActive) return;
+    
+        const numOfPlayers = game.players.length;
+        const initialTotalCards = 5;
         const availableCards = Array.from({ length: 60 }, (_, i) => i + 1);
-        const shuffledCards = shuffle(availableCards);
-        console.log("Shuffled Cards:", shuffledCards); // Debugging
-
-        const numOfPlayers = 5; // Default number of players
-        const initialTotalCards = 5; // Default cards per player
-
-        const players = Array.from({ length: numOfPlayers }, () => []);
-        for (let i = 0; i < numOfPlayers; i++) {
-          players[i] = shuffledCards.slice(
-            i * initialTotalCards,
-            (i + 1) * initialTotalCards
+        const shuffledCards = shuffle([...availableCards]);
+    
+        const dealtCards = shuffledCards.slice(0, numOfPlayers * initialTotalCards);
+        const stackArray = shuffledCards.slice(numOfPlayers * initialTotalCards);
+    
+        const playersCards = [];
+        
+        // Ensure the first player (index 0) gets a 1
+        playersCards[0] = [1]; // Start with 1
+        const remainingCards = dealtCards.filter(card => card !== 1); // Remove one 1 from dealtCards
+        playersCards[0] = playersCards[0].concat(
+          remainingCards.slice(0, initialTotalCards - 1)
+        ); // Add 4 more cards
+    
+        // Deal cards to remaining players
+        for (let i = 1; i < numOfPlayers; i++) {
+          playersCards[i] = remainingCards.slice(
+            (i - 1) * initialTotalCards + (initialTotalCards - 1),
+            i * initialTotalCards + (initialTotalCards - 1)
           );
         }
-
-        const stackArray = shuffledCards.slice(
-          numOfPlayers * initialTotalCards,
-          shuffledCards.length
-        );
-
-        console.log("Players' Cards:", players); // Debugging
-        console.log("Stack Array:", stackArray); // Debugging
-
+    
+        // Update player documents
+        for (let i = 0; i < numOfPlayers; i++) {
+          await Player.findByIdAndUpdate(game.players[i]._id, {
+            cards: playersCards[i],
+          });
+          console.log(`Player ${i + 1} cards:`, playersCards[i]);
+        }
+    
+        console.log(`Stack array length before save: ${stackArray.length}`);
+    
         const gameState = new GameState({
           gameCode,
-          players,
+          players: game.players.map((p) => p._id),
+          scores: new Map(),
           floorCards: [],
           currentPlayerIndex: 0,
           stackArray,
           winner: null,
           gameOver: false,
         });
-
+    
         await gameState.save();
-        console.log("Game State Saved:", gameState); // Debugging
-        io.to(gameCode).emit("updateGameState", gameState); // Ensure this line is executed
+        console.log(`Saved gameState stackArray length: ${gameState.stackArray.length}`);
+    
+        game.isActive = true;
+        await game.save();
+    
+        io.to(gameCode).emit("gameStarted", { message: "Game started!" });
+        emitGameState(gameCode);
       } catch (err) {
         console.error("Error starting game:", err);
+        io.to(gameCode).emit("error", "Failed to start game");
       }
-    });
-
-    // Handle playing a card
+    };
+    // Play a card
     socket.on("playCard", async ({ gameCode, playerId, cardIndex }) => {
       try {
-        console.log(`Playing card in room: ${gameCode}`); // Debugging
-        const gameState = await GameState.findOne({ gameCode });
-        if (!gameState) {
-          console.log("Game not found");
+        console.log(`Received playCard: gameCode=${gameCode}, playerId=${playerId}, cardIndex=${cardIndex}`);
+        const gameState = await GameState.findOne({ gameCode }).populate("players");
+        if (!gameState || gameState.gameOver) {
+          console.log("Play rejected: Game not found or over");
+          socket.emit("error", "Game not found or over");
           return;
         }
-
-        console.log("Current Game State Before Playing Card:", gameState); // Debugging
-
-        const playerIndex = gameState.players.findIndex((player) =>
-          player.includes(playerId)
-        );
-        const currentPlayerHand = gameState.players[playerIndex];
-        const numberPlayed = currentPlayerHand[cardIndex];
-
-        console.log(`Player ${playerIndex} played card: ${numberPlayed}`); // Debugging
-
-        // Validate the move
-        if (!gameState.floorCards.includes(1) && numberPlayed !== 1) {
-          io.to(gameCode).emit("error", "Please choose 1!");
+    
+        const playerIndex = gameState.players.findIndex((p) => p._id.toString() === playerId);
+        if (playerIndex !== gameState.currentPlayerIndex) {
+          console.log(`Play rejected: Not player ${playerId}'s turn (currentPlayerIndex=${gameState.currentPlayerIndex})`);
+          socket.emit("error", "Not your turn!");
           return;
         }
-
-        if (
-          !isPrime(numberPlayed) &&
-          !areAllPrimeFactorsOnFloor(numberPlayed, gameState.floorCards)
-        ) {
-          io.to(gameCode).emit("error", "Invalid card chosen!");
+    
+        const player = gameState.players[playerIndex];
+        const card = player.cards[cardIndex];
+        if (!card) {
+          console.log("Play rejected: Invalid card index");
+          socket.emit("error", "Invalid card index");
           return;
         }
-
-        // Update game state
-        const updatedHand = [...currentPlayerHand];
-        updatedHand.splice(cardIndex, 1);
-        gameState.players[playerIndex] = updatedHand;
-        gameState.floorCards.push(numberPlayed);
-
-        // Draw a new card from the stack
+    
+        console.log(`Player ${playerId} hand: ${player.cards}`);
+        console.log(`Attempting to play card: ${card}`);
+    
+        if (!gameState.floorCards.includes(1) && card !== 1) {
+          console.log("Play rejected: Must play 1 first");
+          socket.emit("error", "Must play 1 first!");
+          return;
+        }
+    
+        if (!isPrime(card) && !areAllPrimeFactorsOnFloor(card, gameState.floorCards)) {
+          console.log("Play rejected: Invalid card - prime factors not on floor");
+          socket.emit("error", "Invalid card: prime factors not on floor!");
+          return;
+        }
+    
+        player.cards.splice(cardIndex, 1);
+        gameState.floorCards.push(card);
+    
         if (gameState.stackArray.length > 0) {
           const newCard = gameState.stackArray.shift();
-          updatedHand.push(newCard);
+          player.cards.push(newCard);
+          console.log(`Player ${playerId} drew card: ${newCard}`);
         }
-
-        // Check for a winner
-        if (updatedHand.length === 0) {
+    
+        if (player.cards.length === 0) {
           gameState.winner = playerIndex;
           gameState.gameOver = true;
+          console.log(`Player ${playerId} won!`);
+        } else {
+          gameState.currentPlayerIndex =
+            (gameState.currentPlayerIndex + 1) % gameState.players.length;
+          console.log(`Turn passed to player index: ${gameState.currentPlayerIndex}`);
         }
-
-        // Update current player
-        gameState.currentPlayerIndex =
-          (gameState.currentPlayerIndex + 1) % gameState.players.length;
-
+    
+        await player.save();
         await gameState.save();
-        console.log("Updated Game State After Playing Card:", gameState); // Debugging
-        io.to(gameCode).emit("updateGameState", gameState);
+        console.log(`Game state updated: floorCards=${gameState.floorCards}, stackArray length=${gameState.stackArray.length}`);
+        emitGameState(gameCode);
       } catch (err) {
         console.error("Error playing card:", err);
+        socket.emit("error", "Failed to play card");
       }
     });
 
-    // Handle passing the turn
+    // Pass turn
     socket.on("passTurn", async ({ gameCode, playerId }) => {
       try {
-        const gameState = await GameState.findOne({ gameCode });
-        if (!gameState) {
-          console.log("Game not found");
+        const gameState = await GameState.findOne({ gameCode }).populate("players");
+        if (!gameState || gameState.gameOver) return;
+
+        const playerIndex = gameState.players.findIndex(
+          (p) => p._id.toString() === playerId
+        );
+        if (playerIndex !== gameState.currentPlayerIndex) {
+          socket.emit("error", "Not your turn!");
           return;
         }
 
-        const playerIndex = gameState.players.findIndex((player) =>
-          player.includes(playerId)
-        );
-
-        // Draw a new card from the stack
         if (gameState.stackArray.length > 0) {
           const newCard = gameState.stackArray.shift();
-          gameState.players[playerIndex].push(newCard);
+          gameState.players[playerIndex].cards.push(newCard);
+          await gameState.players[playerIndex].save();
         }
 
-        // Update current player
         gameState.currentPlayerIndex =
           (gameState.currentPlayerIndex + 1) % gameState.players.length;
-
         await gameState.save();
-        io.to(gameCode).emit("updateGameState", gameState);
+        emitGameState(gameCode); // Call emitGameState here to update all players
       } catch (err) {
         console.error("Error passing turn:", err);
+        socket.emit("error", "Failed to pass turn");
       }
     });
 
-    socket.on("disconnect", () => {
+    socket.on("disconnect", async () => {
       console.log("Client disconnected:", socket.id);
+      const player = await Player.findOne({ socketId: socket.id });
+      if (player) {
+        const gameState = await GameState.findOne({ gameCode: player.gameCode }).populate("players");
+        if (gameState && !gameState.gameOver) {
+          const playerIndex = gameState.players.findIndex((p) => p._id.equals(player._id));
+          if (playerIndex === gameState.currentPlayerIndex) {
+            gameState.currentPlayerIndex =
+              (gameState.currentPlayerIndex + 1) % gameState.players.length;
+            await gameState.save();
+            emitGameState(player.gameCode); // Call emitGameState here to update remaining players
+          }
+        }
+      }
     });
   });
+};
+
+// Define emitGameState function
+const emitGameState = async (gameCode) => {
+  const gameState = await GameState.findOne({ gameCode }).populate("players");
+  if (!gameState) {
+    console.log(`No game state found for ${gameCode}`);
+    return;
+  }
+
+  const stateToSend = {
+    players: gameState.players.map((p) => ({
+      id: p._id.toString(),
+      name: p.name,
+      cards: p.cards,
+    })),
+    floorCards: gameState.floorCards,
+    currentPlayerIndex: gameState.currentPlayerIndex,
+    stackArray: gameState.stackArray,
+    winner: gameState.winner,
+    gameOver: gameState.gameOver,
+  };
+
+  console.log(`Emitting game state for ${gameCode}, stackArray length: ${stateToSend.stackArray.length}`);
+  io.to(gameCode).emit("updateGameState", stateToSend);
 };
 
 // Helper functions
@@ -189,12 +297,8 @@ const areAllPrimeFactorsOnFloor = (num, floorCards) => {
   if (isPrime(num)) return true;
   const primeFactors = getAllPrimeFactors(num);
   return primeFactors.every((factor) => {
-    const factorCountOnFloor = floorCards.filter(
-      (card) => card === factor
-    ).length;
-    return (
-      factorCountOnFloor >= primeFactors.filter((pf) => pf === factor).length
-    );
+    const factorCountOnFloor = floorCards.filter((card) => card === factor).length;
+    return factorCountOnFloor >= primeFactors.filter((pf) => pf === factor).length;
   });
 };
 

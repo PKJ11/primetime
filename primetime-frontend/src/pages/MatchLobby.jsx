@@ -1,66 +1,36 @@
 import React, { useState, useEffect } from "react";
-import primeTimeLogo from "../assets/images/primetimelogo.svg";
+import { useParams } from "react-router-dom";
+import io from "socket.io-client";
 import Card from "../Components/Card";
 
-const writeToLogFile = (message) => {
-  const logMessage = `${new Date().toISOString()}: ${message}\n`;
-  const blob = new Blob([logMessage], { type: "text/plain" });
-  const file = new File([blob], "log.txt", { type: "text/plain" });
-};
+const socket = io("http://localhost:5000", {
+  transports: ["websocket"],
+  cors: {
+    origin: "http://localhost:5173",
+    credentials: true,
+  },
+});
 
-const downloadLogFile = () => {
-  let file = localStorage.getItem("logFile");
-  const blob = new Blob([file], { type: "text/plain" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.setAttribute("download", "log.txt");
-  document.body.appendChild(link);
-  link.click();
-};
-
-const clearLogFile = () => {
-  localStorage.removeItem("logFile");
-  console.log("Log file cleared.");
-};
-
-const appendToLogFile = (message) => {
-  const logMessage = `${new Date().toISOString()}: ${message}\n`;
-  const blob = new Blob([logMessage], { type: "text/plain" });
-  let existingLogs = localStorage.getItem("logFile");
-  if (!existingLogs) {
-    existingLogs = "";
-  }
-  const updatedLogs = existingLogs + logMessage;
-  localStorage.setItem("logFile", updatedLogs);
-};
-
-const MatchLobby = () => {
+const PrimeTime = () => {
+  const { gameCode: urlGameCode } = useParams();
+  const [gameCode] = useState(urlGameCode || localStorage.getItem("gameCode") || "");
+  const [playerId, setPlayerId] = useState(localStorage.getItem("playerId") || null);
   const [players, setPlayers] = useState([]);
   const [floorCards, setFloorCards] = useState([]);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(null);
-  const [winner, setWinner] = useState(null);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [gameOver, setGameOver] = useState(false);
-  const [numOfPlayers, setNumOfPlayers] = useState(5);
   const [stackArray, setStackArray] = useState([]);
-  const [initialTotalCards, setInitialTotalCards] = useState(5);
+  const [winner, setWinner] = useState(null);
+  const [gameOver, setGameOver] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [joinedPlayers, setJoinedPlayers] = useState([]);
+  const [maxPlayers, setMaxPlayers] = useState(null);
 
-  const availableCards = [
-    1, 2, 2, 2, 2, 2, 3, 3, 3, 4, 5, 5, 6, 7, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-    16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34,
-    35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53,
-    54, 55, 56, 57, 58, 59, 60,
-  ];
+  const availableCards = Array.from({ length: 60 }, (_, i) => i + 1);
 
   const isPrime = (num) => {
-    if (num <= 1) {
-      return false;
-    }
+    if (num <= 1) return false;
     for (let i = 2; i <= Math.sqrt(num); i++) {
-      if (num % i === 0) {
-        return false;
-      }
+      if (num % i === 0) return false;
     }
     return true;
   };
@@ -76,271 +46,167 @@ const MatchLobby = () => {
     return factors;
   };
 
-  const areAllPrimeFactorsOnFloor = (num) => {
-    if (isPrime(num)) {
-      return true;
-    }
+  const areAllPrimeFactorsOnFloor = (num, floorCards) => {
+    if (isPrime(num)) return true;
     const primeFactors = getAllPrimeFactors(num);
-
-    return primeFactors.every((factor) => {
-      const factorCountOnFloor = floorCards.reduce((acc, floorCard) => {
-        return availableCards[floorCard] === factor ? acc + 1 : acc;
-      }, 0);
-
-      return (
-        factorCountOnFloor >= primeFactors.filter((pf) => pf === factor).length
-      );
-    });
+    return primeFactors.every((factor) => floorCards.includes(factor));
   };
 
-  const getCardFromStack = (currentPlayerIndex) => {
-    const updatedHand = players[currentPlayerIndex];
-    if (stackArray.length > 0) {
-      const updatedStackArray = [...stackArray];
-      let card = updatedStackArray.shift();
-      updatedHand.push(card);
-      setStackArray(updatedStackArray);
-    }
-    const updatedPlayers = [...players];
-    updatedPlayers[currentPlayerIndex] = updatedHand;
-    setPlayers(updatedPlayers);
+  const isCardPlayable = (card) => {
+    if (floorCards.length === 0) return card === 1; // Must play 1 first
+    return isPrime(card) || areAllPrimeFactorsOnFloor(card, floorCards);
   };
 
-  const playTurn = (indexToRemove, playedHand) => {
+  const playCard = (cardIndex) => {
     if (gameOver) {
-      setErrorMessage("The game is over. Please start a new game.");
+      setErrorMessage("Game is over!");
+      console.log("Cannot play: Game is over");
       return;
     }
-    if (currentPlayerIndex !== playedHand - 1) {
-      setErrorMessage(
-        `It's not Player ${playedHand}'s turn! Let Player ${
-          currentPlayerIndex + 1
-        } play the game!!`
-      );
-      return;
-    }
-
-    const currentPlayerHand = players[currentPlayerIndex];
-    const numberPlayed = currentPlayerHand[indexToRemove];
-
-    if (!floorCards.includes(0) && numberPlayed !== 1) {
-      setErrorMessage("Please choose 1 !");
-      return;
-    }
-
-    if (!isPrime(numberPlayed) && !areAllPrimeFactorsOnFloor(numberPlayed)) {
-      setErrorMessage("Invalid card chosen!");
-      return;
-    }
-
-    let index;
-    for (let i = 0; i < 68; i++) {
-      if (availableCards[i] == numberPlayed && !floorCards.includes(i)) {
-        index = i;
-        break;
-      }
-    }
-    const updatedHand = [...currentPlayerHand];
-    setFloorCards([...floorCards, index]);
-    updatedHand.splice(indexToRemove, 1);
-    if (stackArray.length > 0) {
-      const updatedStackArray = [...stackArray];
-      let card = updatedStackArray.shift();
-      updatedHand.push(card);
-      setStackArray(updatedStackArray);
-    }
-    const updatedPlayers = [...players];
-    updatedPlayers[currentPlayerIndex] = updatedHand;
-    setPlayers(updatedPlayers);
-    const playerName = `Player ${currentPlayerIndex + 1}`;
-    const logEntry = `Turn ${playedHand}: ${playerName} played card ${updatedHand[indexToRemove]}\n`;
-    appendToLogFile(logEntry);
-    setErrorMessage("");
-    checkWinCondition(playedHand);
-    setCurrentPlayerIndex((currentPlayerIndex + 1) % players.length);
-    if (updatedHand.length === 0) {
-      setWinner(playedHand);
-      const playerName = `Player ${playedHand}`;
-      const winLogEntry = `Player ${playerName} won the game!\n`;
-      appendToLogFile(winLogEntry);
-      setGameOver(true);
-    }
-  };
-
-  const checkWinCondition = (playedHand) => {
-    if (players[playedHand - 1].length === 0) {
-      setWinner(playedHand);
-      const playerName = `Player ${playedHand}`;
-      const logEntry = `Player ${playerName} won the game!\n`;
-      appendToLogFile(logEntry);
-      setGameOver(true);
-      return;
-    }
-  };
-
-  const belongsToPlayer = (card, playerIndex) => {
-    return players[playerIndex].includes(card);
-  };
-
-  const canPlayAnyCard = (playerIndex) => {
-    const currentPlayerHand = players[playerIndex];
-    return currentPlayerHand.some((card) => {
-      return isPrime(card) || areAllPrimeFactorsOnFloor(card) || card === 1;
-    });
-  };
-
-  const startGame = () => {
-    if (numOfPlayers < 1 || numOfPlayers > 6) {
-      setErrorMessage("Number of players must be in between 1 and 6");
-      return;
-    }
-
-    if (initialTotalCards < 1 || initialTotalCards > 8) {
-      setErrorMessage("Total cards must be in between 1 and 8");
-      return;
-    }
-
-    const shuffledCards = shuffle(availableCards);
-    const maxIndex = initialTotalCards * numOfPlayers - 1;
-    const indexOfOne = shuffledCards.indexOf(1);
-    const randomIndex = Math.floor(Math.random() * (maxIndex + 1));
-    [shuffledCards[indexOfOne], shuffledCards[randomIndex]] = [
-      shuffledCards[randomIndex],
-      shuffledCards[indexOfOne],
-    ];
-    clearLogFile();
-    appendToLogFile("Start of the Game !");
-    appendToLogFile("");
-    setErrorMessage("");
-    setWinner(null);
-
-    const hands = Array.from({ length: numOfPlayers }, () => []);
-
-    const cardsPerPlayer = initialTotalCards;
-    for (let i = 0; i < numOfPlayers; i++) {
-      hands[i] = shuffledCards.slice(
-        i * cardsPerPlayer,
-        (i + 1) * cardsPerPlayer
-      );
-    }
-
-    setStackArray(
-      shuffledCards.slice(
-        numOfPlayers * initialTotalCards,
-        shuffledCards.length
-      )
-    );
-
-    setPlayers(hands);
-    setFloorCards([]);
-    setGameOver(false);
-  };
-
-  const shuffle = (array) => {
-    let currentIndex = array.length;
-    let temporaryValue, randomIndex;
-
-    while (currentIndex !== 0) {
-      randomIndex = Math.floor(Math.random() * currentIndex);
-      currentIndex -= 1;
-
-      temporaryValue = array[currentIndex];
-      array[currentIndex] = array[randomIndex];
-      array[randomIndex] = temporaryValue;
-    }
-
-    return array;
+    console.log(`Playing card at index ${cardIndex} for player ${playerId} in game ${gameCode}`);
+    socket.emit("playCard", { gameCode, playerId, cardIndex });
   };
 
   useEffect(() => {
-    for (let i = 0; i < players.length; i++) {
-      if (belongsToPlayer(1, i)) {
-        setCurrentPlayerIndex(i);
-        break;
-      }
+    if (!gameCode || !playerId) {
+      setErrorMessage("Missing game code or player ID!");
+      return;
     }
-  }, [players]);
-  const playerss = [
-    { id: 2, name: "Player 02", cardsLeft: 4, active: false },
-    { id: 3, name: "Player 03", cardsLeft: 4, active: false },
-    { id: 4, name: "", cardsLeft: 4, active: true },
-    { id: 5, name: "Player 05", cardsLeft: 4, active: false },
-    { id: 6, name: "Player 06", cardsLeft: 4, active: false },
-  ];
+
+    socket.emit("joinGame", {
+      gameCode,
+      playerName: localStorage.getItem("playerName"),
+      grade: "",
+    });
+
+    socket.on("connect", () => {
+      console.log("Connected to server:", socket.id);
+    });
+
+    socket.on("assignPlayerId", (id) => {
+      setPlayerId(id);
+      localStorage.setItem("playerId", id);
+      console.log("Assigned player ID:", id);
+    });
+
+    socket.on("updatePlayers", (playerNames) => {
+      setJoinedPlayers(playerNames);
+      fetch(`http://localhost:5000/api/game/${gameCode}`)
+        .then((res) => res.json())
+        .then((data) => setMaxPlayers(data.game.settings.maxPlayers));
+      console.log("Updated player names:", playerNames);
+    });
+
+    socket.on("gameStarted", (data) => {
+      console.log("Game started:", data.message);
+    });
+
+    socket.on("updateGameState", (gameState) => {
+      console.log("Received game state:", gameState);
+      setPlayers(gameState.players);
+      setFloorCards(gameState.floorCards);
+      setCurrentPlayerIndex(gameState.currentPlayerIndex);
+      setStackArray(gameState.stackArray);
+      setWinner(gameState.winner);
+      setGameOver(gameState.gameOver);
+    });
+
+    socket.on("error", (msg) => {
+      setErrorMessage(msg);
+      console.log("Error received:", msg);
+    });
+
+    return () => {
+      socket.off("connect");
+      socket.off("assignPlayerId");
+      socket.off("updatePlayers");
+      socket.off("gameStarted");
+      socket.off("updateGameState");
+      socket.off("error");
+    };
+  }, [gameCode]);
+
+  console.log("Current playerId:", playerId);
+  console.log("Players state:", players);
 
   return (
-    <div className="bg" style={{ backgroundColor: "#134E68" }}>
-      <div
-        className="max-w-4xl p-6 rounded-lg shadow-md"
-        style={{
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-        }}
-      >
-        <div className="w-[952px]">
-          <div className="mb-6 bg-white p-4 rounded-lg">
-            <img
-              src={primeTimeLogo}
-              alt="PrimeTime Logo"
-              style={{
-                width: "120.61px",
-                height: "55.96px",
-                marginBottom: "20px",
-              }}
-            />
+    <div className="bg">
+      <div className="max-w-4xl mx-auto p-6 rounded-lg shadow-md" style={{ backgroundColor: "#124d68" }}>
+        <div className="mt-6">
+          <div className="mb-4">
+            <p className="text-lg font-medium text-white">Game Code: {gameCode}</p>
+          </div>
 
-            <div
-              className="flex flex-wrap"
-              style={{
-                width: "921.56px",
-                height: "729.79px",
-                position: "relative",
-              }}
-            >
+          {maxPlayers && (
+            <p className="text-lg font-medium text-white mb-4">
+              Players: {joinedPlayers.length}/{maxPlayers}
+              {joinedPlayers.length < maxPlayers && " (Waiting for players...)"}
+            </p>
+          )}
+
+          {errorMessage && (
+            <p className="text-red-500 font-medium mb-4">{errorMessage}</p>
+          )}
+          {winner !== null && (
+            <p className="text-green-500 font-bold mb-4">
+              Player {winner + 1} won! Congratulations!
+            </p>
+          )}
+
+          <div className="mb-6 bg-white p-4 rounded-lg">
+            <h2 className="text-xl font-semibold mb-4">Floor Cards</h2>
+            <div className="flex flex-wrap">
               {availableCards.map((card, index) => (
                 <div key={index} className="p-2">
                   <Card
                     number={card}
-                    label={floorCards.includes(index) ? "ON FLOOR" : ""}
+                    label={floorCards.includes(card) ? "ON FLOOR" : ""}
                   />
                 </div>
               ))}
             </div>
           </div>
 
-          <div className=" p-4 rounded-lg max-w-3xl mx-auto text-white bg-white w-[952px]">
-            <div className="flex items-center justify-between bg-white p-4 rounded-lg shadow-md w-[100%]">
-              {playerss.map((player, index) => (
-                <div key={player.id} className="flex flex-col items-center">
-                  {player.name && (
-                    <p className="text-xs text-gray-800 font-bold">
-                      {player.name}
-                    </p>
-                  )}
-                  <div
-                    className={`relative w-10 h-10 rounded-full flex items-center justify-center ${
-                      player.active ? "bg-green-500" : "bg-gray-400"
-                    }`}
-                  >
-                    <span className="text-white font-bold">👤</span>
-                  </div>
-                  <div
-                    className={`text-xs mt-1 px-2 py-1 rounded-md ${
-                      player.active
-                        ? "bg-green-500 text-white"
-                        : "bg-gray-200 text-gray-800"
-                    }`}
-                  >
-                    {player.cardsLeft} Cards Left
-                  </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {players.map((player, index) => (
+              <div key={player.id} className="bg-white p-4 rounded-lg shadow-md">
+                <h2 className="text-lg font-bold mb-2">{player.name}</h2>
+                <div className="grid grid-cols-5 gap-2">
+                  {player.cards.map((card, cardIndex) => {
+                    const isPlayable =
+                      playerId === player.id &&
+                      currentPlayerIndex === index &&
+                      isCardPlayable(card);
+                    return (
+                      <button
+                        key={cardIndex}
+                        className={`p-2 border rounded-md text-center font-medium ${
+                          isPlayable ? "bg-green-300" : "bg-blue-100"
+                        }`}
+                        onClick={() => playCard(cardIndex)}
+                        disabled={!isPlayable}
+                      >
+                        {card}
+                      </button>
+                    );
+                  })}
                 </div>
-              ))}
-            </div>
+              </div>
+            ))}
           </div>
+
+          <p className="mt-4 text-lg font-medium text-white">
+            Cards in Stack: {stackArray.length}
+          </p>
+          {currentPlayerIndex !== null && (
+            <p className="mt-4 text-lg font-medium text-white">
+              Current Turn: {players[currentPlayerIndex]?.name}
+            </p>
+          )}
         </div>
       </div>
     </div>
   );
 };
 
-export default MatchLobby;
+export default PrimeTime;

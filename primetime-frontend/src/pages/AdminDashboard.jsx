@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import axios from "axios";
 import primetimeLogo from "../assets/images/primetimelogo.svg";
-import nineteen from "../assets/images/nineteen.svg"; // Import the images
+import nineteen from "../assets/images/nineteen.svg";
 import five from "../assets/images/five.svg";
 import eleven from "../assets/images/eleven.svg";
-import three from "../assets/images/three.svg"; // New imports
+import three from "../assets/images/three.svg";
 import yellowPlus from "../assets/images/yellowplus.svg";
 import greenPlus from "../assets/images/greenplus.svg";
 import seven from "../assets/images/seven.svg";
@@ -38,98 +38,84 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[#134E68] relative">
-      <div className="absolute top-10 w-[284px] h-[147px] mb-[25px]">
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#134E68] overflow-hidden">
+      {/* Logo */}
+      <div className="absolute top-4 w-[180px] sm:w-[220px] md:w-[284px] mb-6">
         <img src={primetimeLogo} alt="Prime Time Logo" className="w-full" />
       </div>
+
+      {/* Decorative Images */}
       <img
         src={nineteen}
         alt="Nineteen"
-        className="absolute"
-        style={{ top: "53px", left: "65px", width: "100px" }}
+        className="absolute hidden sm:block"
+        style={{ top: "53px", left: "65px", width: "60px" }}
       />
-
-      {/* Image: five.svg */}
       <img
         src={five}
         alt="Five"
-        className="absolute"
-        style={{ top: "329px", left: "-12px", width: "100px" }}
+        className="absolute hidden md:block"
+        style={{ top: "329px", left: "-12px", width: "80px" }}
       />
-
-      {/* Image: eleven.svg */}
       <img
         src={eleven}
         alt="Eleven"
-        className="absolute"
-        style={{ top: "665px", left: "-15px", width: "100px" }}
+        className="absolute hidden lg:block"
+        style={{ top: "665px", left: "-15px", width: "80px" }}
       />
-
-      {/* Image: three.svg */}
       <img
         src={three}
         alt="Three"
-        className="absolute"
-        style={{ top: "80%", left: "-5px", width: "100px" }}
+        className="absolute hidden md:block"
+        style={{ top: "80%", left: "-5px", width: "80px" }}
       />
-
-      {/* Image: yellow-plus.svg */}
       <img
         src={yellowPlus}
         alt="Yellow Plus"
-        className="absolute"
-        style={{ bottom: "0", left: "23px", width: "100px" }}
+        className="absolute hidden sm:block"
+        style={{ bottom: "0", left: "23px", width: "80px" }}
       />
-
-      {/* Image: green-plus.svg */}
       <img
         src={greenPlus}
         alt="Green Plus"
-        className="absolute"
-        style={{ top: "85px", right: "93px", width: "100px" }}
+        className="absolute hidden md:block"
+        style={{ top: "85px", right: "93px", width: "80px" }}
       />
-
-      {/* Image: seven.svg */}
       <img
         src={seven}
         alt="Seven"
-        className="absolute"
-        style={{ top: "201px", right: "0", width: "100px" }}
+        className="absolute hidden lg:block"
+        style={{ top: "201px", right: "0", width: "80px" }}
       />
-
-      {/* Image: two.svg */}
       <img
         src={two}
         alt="Two"
-        className="absolute"
-        style={{ top: "553px", right: "10px", width: "100px" }}
+        className="absolute hidden md:block"
+        style={{ top: "553px", right: "10px", width: "80px" }}
       />
-
-      {/* Image: thirteen.svg */}
       <img
         src={thirteen}
         alt="Thirteen"
-        className="absolute"
-        style={{ top: "80%", right: "-10px", width: "100px" }}
+        className="absolute hidden lg:block"
+        style={{ top: "80%", right: "-10px", width: "80px" }}
       />
-
-      {/* Image: nineteen.svg (bottom right) */}
       <img
         src={nineteen}
         alt="Nineteen"
-        className="absolute"
-        style={{ bottom: "0", right: "25px", width: "100px" }}
+        className="absolute hidden sm:block"
+        style={{ bottom: "0", right: "25px", width: "80px" }}
       />
 
-      <div className="bg-white w-[780px] p-12 rounded-[45px] shadow-lg flex flex-col items-center  absolute top-60">
-        <h1 className="text-[40px] font-[900] text-center mb-[25px] text-[#F36C40]">
+      {/* Dashboard Content */}
+      <div className="bg-white w-full max-w-[780px] mx-4 p-6 sm:p-8 md:p-12 rounded-3xl sm:rounded-[45px] shadow-lg flex flex-col items-center mt-20 sm:mt-24">
+        <h1 className="text-2xl sm:text-3xl md:text-[40px] font-black text-center mb-6 md:mb-[25px] text-[#F36C40]">
           Admin Control
         </h1>
 
         <select
           value={numPlayers}
           onChange={(e) => setNumPlayers(e.target.value)}
-          className="w-[644px] h-[70px] p-4 mb-[35px] bg-[#F4F5F6] rounded-[41px] text-[30px]"
+          className="w-full max-w-[644px] h-12 sm:h-14 md:h-[70px] p-4 mb-6 md:mb-[35px] bg-[#F4F5F6] rounded-2xl md:rounded-[41px] text-base sm:text-lg md:text-[30px] text-gray-600"
         >
           <option value="">Select number of players*</option>
           <option value="2">2</option>
@@ -140,7 +126,7 @@ const AdminDashboard = () => {
         <select
           value={grade}
           onChange={(e) => setGrade(e.target.value)}
-          className="w-[644px] h-[70px] p-4 mb-[35px] bg-[#F4F5F6] rounded-[41px] text-[30px]"
+          className="w-full max-w-[644px] h-12 sm:h-14 md:h-[70px] p-4 mb-6 md:mb-[35px] bg-[#F4F5F6] rounded-2xl md:rounded-[41px] text-base sm:text-lg md:text-[30px] text-gray-600"
         >
           <option value="">Select grade of players*</option>
           <option value="Grade 1">Grade 1</option>
@@ -148,10 +134,12 @@ const AdminDashboard = () => {
           <option value="Grade 3">Grade 3</option>
         </select>
 
-        <div className="flex items-center justify-between w-[644px] h-[70px] p-4 mb-[35px] bg-[#F4F5F6] rounded-[41px]">
-          <span className="text-[30px]">Hint mode</span>
+        <div className="flex items-center justify-between w-full max-w-[644px] h-12 sm:h-14 md:h-[70px] p-4 mb-6 md:mb-[35px] bg-[#F4F5F6] rounded-2xl md:rounded-[41px]">
+          <span className="text-base sm:text-lg md:text-[30px] text-gray-600">
+            Hint mode
+          </span>
           <button
-            className={`w-[80px] h-[40px] rounded-full text-white ${
+            className={`w-16 sm:w-20 md:w-[80px] h-8 sm:h-9 md:h-[40px] rounded-full text-white text-sm sm:text-base ${
               hintMode ? "bg-green-500" : "bg-gray-400"
             }`}
             onClick={() => setHintMode(!hintMode)}
@@ -160,10 +148,12 @@ const AdminDashboard = () => {
           </button>
         </div>
 
-        <div className="flex items-center justify-between w-[644px] h-[70px] p-4 mb-[35px] bg-[#F4F5F6] rounded-[41px]">
-          <span className="text-[30px]">Timer mode</span>
+        <div className="flex items-center justify-between w-full max-w-[644px] h-12 sm:h-14 md:h-[70px] p-4 mb-6 md:mb-[35px] bg-[#F4F5F6] rounded-2xl md:rounded-[41px]">
+          <span className="text-base sm:text-lg md:text-[30px] text-gray-600">
+            Timer mode
+          </span>
           <button
-            className={`w-[80px] h-[40px] rounded-full text-white ${
+            className={`w-16 sm:w-20 md:w-[80px] h-8 sm:h-9 md:h-[40px] rounded-full text-white text-sm sm:text-base ${
               timerMode ? "bg-green-500" : "bg-gray-400"
             }`}
             onClick={() => setTimerMode(!timerMode)}
@@ -175,7 +165,9 @@ const AdminDashboard = () => {
         <select
           value={timerLimit}
           onChange={(e) => setTimerLimit(e.target.value)}
-          className="w-[644px] h-[70px] p-4 mb-[45px] bg-[#F4F5F6] rounded-[41px] text-[30px]"
+          className={`w-full max-w-[644px] h-12 sm:h-14 md:h-[70px] p-4 mb-6 md:mb-[45px] bg-[#F4F5F6] rounded-2xl md:rounded-[41px] text-base sm:text-lg md:text-[30px] text-gray-600 ${
+            !timerMode ? "opacity-50 cursor-not-allowed" : ""
+          }`}
           disabled={!timerMode}
         >
           <option value="">Select Timer Limit</option>
@@ -186,19 +178,20 @@ const AdminDashboard = () => {
 
         <button
           onClick={createGame}
-          className="w-[644px] h-[70px] bg-[#28A8E0] text-white text-[40px] rounded-[41px] mt-10 font-[800]"
+          className="w-full max-w-[644px] h-12 sm:h-14 md:h-[70px] bg-[#28A8E0] text-white text-lg sm:text-xl md:text-[40px] font-extrabold rounded-2xl md:rounded-[41px] mt-4 sm:mt-6 md:mt-10 hover:bg-[#2193c7] transition-colors"
         >
           {gameCode ? `Game code ${gameCode} created` : "Create"}
         </button>
       </div>
-      {/* Bottom Image in a Full-Width Div */}
-      <div className="absolute bottom-0 w-full flex justify-center">
+
+      {/* Bottom Image */}
+      {/* <div className="absolute bottom-0 w-full flex justify-center">
         <img
           src="https://ik.imagekit.io/pratik2002/cardsbundle-removebg-preview.png?updatedAt=1741748631461"
           alt="Cards Bundle"
-          className="w-full"
+          className="w-full max-h-32 sm:max-h-40 object-cover"
         />
-      </div>
+      </div> */}
     </div>
   );
 };
