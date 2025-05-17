@@ -23,7 +23,7 @@ const AdminDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "http://localhost:5000/api/game/create",
+        "http://primetime-backend.vercel.app/api/game/create",
         { maxPlayers: numPlayers, duration: timerLimit },
         {
           headers: {

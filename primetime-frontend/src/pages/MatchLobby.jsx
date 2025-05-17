@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import io from "socket.io-client";
 import Card from "../Components/Card";
 
-const socket = io("http://localhost:5000", {
+const socket = io("http://primetime-backend.vercel.app", {
   transports: ["websocket"],
   cors: {
     origin: "http://localhost:5173",
@@ -91,7 +91,7 @@ const PrimeTime = () => {
 
     socket.on("updatePlayers", (playerNames) => {
       setJoinedPlayers(playerNames);
-      fetch(`http://localhost:5000/api/game/${gameCode}`)
+      fetch(`http://primetime-backend.vercel.app/api/game/${gameCode}`)
         .then((res) => res.json())
         .then((data) => setMaxPlayers(data.game.settings.maxPlayers));
       console.log("Updated player names:", playerNames);
