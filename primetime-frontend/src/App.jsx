@@ -12,6 +12,7 @@ function App() {
       {/* Use a div with max-width of 1024px */}
       {/* <div className="max-w-[1024px] p-0"> */}
         <Routes>
+                    <Route path="/" element={"hi"} />
           <Route path="/register" element={<AdminRegistration />} />
           <Route path="/admin-login" element={<AdminLogin />} />
           <Route path="/admin-dashboard" element={<AdminDashboard />} />
