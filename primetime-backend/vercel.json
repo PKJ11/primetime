@@ -19,5 +19,11 @@
       "src": "/(.*)",
       "dest": "index.js"
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/socket.io/:path*",
+      "destination": "https://primetime-backend.vercel.app/socket.io/:path*"
+    }
   ]
 }
