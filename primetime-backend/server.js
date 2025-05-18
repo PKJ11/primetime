@@ -27,6 +27,10 @@ connectDB();
 app.use("/api/admin", adminRoutes);
 app.use("/api/game", gameRoutes);
 app.use("/api/player", playerRoutes);
+app.post('/api/admin/register', (req, res) => {
+  // registration logic
+  res.json({ message: 'Register endpoint hit!' })
+})
 
 const server = app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
