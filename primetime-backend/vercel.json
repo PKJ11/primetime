@@ -3,32 +3,29 @@
   "builds": [
     {
       "src": "server.js",
-      "use": "@vercel/node"
+      "use": "@vercel/node",
+      "config": {
+        "maxLambdaSize": "15mb",
+        "includeFiles": ["**/*.js", "**/*.json", "!node_modules/**"]
+      }
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/socket.io/(.*)",
-      "destination": "https://primetime_backend_apis.vercel.app/socket.io/$1"
+      "src": "/socket.io/(.*)",
+      "dest": "server.js",
+      "headers": {
+        "Connection": "Upgrade",
+        "Upgrade": "websocket"
+      }
     },
     {
-      "source": "/(.*)",
-      "destination": "/server.js"
-    }
-  ],
-  "headers": [
+      "src": "/api/(.*)",
+      "dest": "server.js"
+    },
     {
-      "source": "/socket.io/(.*)",
-      "headers": [
-        {
-          "key": "Connection",
-          "value": "Upgrade"
-        },
-        {
-          "key": "Upgrade",
-          "value": "websocket"
-        }
-      ]
+      "src": "/(.*)",
+      "dest": "server.js"
     }
   ]
 }
