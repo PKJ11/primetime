@@ -3,10 +3,10 @@ import { useParams } from "react-router-dom";
 import io from "socket.io-client";
 import Card from "../Components/Card";
 
-const socket = io("http://primetime-backend.vercel.app", {
+const socket = io("wss://primetime-backend.vercel.app", {
   transports: ["websocket"],
   cors: {
-    origin: "http://localhost:5173",
+    origin: "*",
     credentials: true,
   },
 });

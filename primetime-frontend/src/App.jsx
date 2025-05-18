@@ -12,15 +12,15 @@ function App() {
     <Router>
       {/* Use a div with max-width of 1024px */}
       {/* <div className="max-w-[1024px] p-0"> */}
-        <Routes>
-                    <Route path="/" element={<Home/>} />
-          <Route path="/register" element={<AdminRegistration />} />
-          <Route path="/admin-login" element={<AdminLogin />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/join-game" element={<UserLogin />} />
-          <Route path="/game-lobby/:gameCode" element={<MatchLobby />} />
-          <Route path="/results" element={<ResultPage />} />
-        </Routes>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/register" element={<AdminRegistration />} />
+        <Route path="/admin-login" element={<AdminLogin />} />
+        <Route path="/admin-dashboard" element={<AdminDashboard />} />
+        <Route path="/join-game" element={<UserLogin />} />
+        <Route path="/game-lobby/:gameCode" element={<MatchLobby />} />
+        <Route path="/results" element={<ResultPage />} />
+      </Routes>
       {/* </div> */}
     </Router>
   );

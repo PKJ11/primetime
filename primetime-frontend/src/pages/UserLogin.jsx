@@ -12,10 +12,10 @@ import seven from "../assets/images/seven.svg";
 import two from "../assets/images/two.svg";
 import thirteen from "../assets/images/thirteen.svg";
 
-const socket = io("http://primetime-backend.vercel.app", {
+const socket = io("wss://primetime-backend.vercel.app", {
   transports: ["websocket"],
   cors: {
-    origin: "http://localhost:5173",
+    origin: "*",
     credentials: true,
   },
 });
