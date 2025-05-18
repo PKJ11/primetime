@@ -23,7 +23,7 @@
   "rewrites": [
     {
       "source": "/socket.io/(.*)",
-      "destination": "https://primetime-backend.vercel.app/socket.io/$1"
+      "destination": "https://primetime_backend_api.vercel.app/socket.io/$1"
     }
   ]
 }
