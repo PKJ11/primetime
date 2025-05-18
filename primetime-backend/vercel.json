@@ -2,14 +2,14 @@
   "version": 2,
   "builds": [
     {
-      "src": "index.js",
+      "src": "server.js",
       "use": "@vercel/node"
     }
   ],
   "routes": [
     {
       "src": "/socket.io/(.*)",
-      "dest": "index.js",
+      "dest": "server.js",
       "headers": {
         "Connection": "Upgrade",
         "Upgrade": "websocket"
@@ -17,7 +17,7 @@
     },
     {
       "src": "/(.*)",
-      "dest": "index.js"
+      "dest": "server.js"
     }
   ],
   "rewrites": [
