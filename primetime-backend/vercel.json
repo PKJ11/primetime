@@ -6,24 +6,29 @@
       "use": "@vercel/node"
     }
   ],
-  "routes": [
-    {
-      "src": "/socket.io/(.*)",
-      "dest": "server.js",
-      "headers": {
-        "Connection": "Upgrade",
-        "Upgrade": "websocket"
-      }
-    },
-    {
-      "src": "/(.*)",
-      "dest": "server.js"
-    }
-  ],
   "rewrites": [
     {
       "source": "/socket.io/(.*)",
       "destination": "https://primetime_backend_api.vercel.app/socket.io/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/server.js"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/socket.io/(.*)",
+      "headers": [
+        {
+          "key": "Connection",
+          "value": "Upgrade"
+        },
+        {
+          "key": "Upgrade",
+          "value": "websocket"
+        }
+      ]
     }
   ]
 }
