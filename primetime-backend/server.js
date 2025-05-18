@@ -27,8 +27,9 @@ connectDB();
 app.use("/api/admin", adminRoutes);
 app.use("/api/game", gameRoutes);
 app.use("/api/player", playerRoutes);
-app.post('/api/admin/register', (req, res) => {
+app.get('/', (req, res) => {
   // registration logic
+  res.send("tis is backedn")
   res.json({ message: 'Register endpoint hit!' })
 })
 
