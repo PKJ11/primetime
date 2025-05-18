@@ -37,20 +37,25 @@ const UserLogin = () => {
       setError("Please enter a name and game code");
       return;
     }
+    console.log("hello")
 
     // Join game via Socket.IO
     socket.emit("joinGame", { gameCode, playerName, grade });
+    console.log("hello2")
 
     // Listen for player ID assignment and redirect
     socket.once("assignPlayerId", (playerId) => {
+      console.log("hello from socket ")
       localStorage.setItem("playerName", playerName);
       localStorage.setItem("gameCode", gameCode);
       localStorage.setItem("playerId", playerId);
       navigate(`/game-lobby/${gameCode}`);
     });
+    console.log("hello3")
 
     // Handle errors
     socket.once("error", (msg) => {
+      console.log("error",msg)
       setError(msg);
     });
   };
