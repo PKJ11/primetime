@@ -95,7 +95,7 @@ const PrimeTime = () => {
 
     socket.on("updatePlayers", (playerNames) => {
       setJoinedPlayers(playerNames);
-      fetch(`http://primetime-backend.vercel.app/api/game/${gameCode}`)
+      fetch(`https://primetime-backend.vercel.app/api/game/${gameCode}`)
         .then((res) => res.json())
         .then((data) => setMaxPlayers(data.game.settings.maxPlayers));
       console.log("Updated player names:", playerNames);
