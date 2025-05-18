@@ -6,7 +6,7 @@
       "use": "@vercel/node",
       "config": {
         "maxLambdaSize": "15mb",
-        "includeFiles": ["**/*.js", "**/*.json", "!node_modules/**"]
+        "includeFiles": ["**/*.js", "**/*.json"]
       }
     }
   ],
