@@ -21,7 +21,7 @@ const AdminLogin = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "https://primetime-backend.vercel.app/api/admin/login",
+        "https://primetimebackendapis.vercel.app/api/admin/login",
         {
           email,
           password,

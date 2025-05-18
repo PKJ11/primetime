@@ -28,7 +28,7 @@ const AdminRegistration = () => {
       return;
     }
     try {
-      const response = await axios.post("https://primetime-backend.vercel.app/api/admin/register", {
+      const response = await axios.post("https://primetimebackendapis.vercel.app/api/admin/register", {
         name,
         email,
         password,

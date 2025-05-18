@@ -11,7 +11,7 @@ const initSocket = (server) => {
     cors: {
       origin: [
         'https://primetime-ruby.vercel.app',
-        'https://primetime-backend.vercel.app'
+        'https://primetimebackendapis.vercel.app'
       ],
       methods: ["GET", "POST"],
       credentials: true

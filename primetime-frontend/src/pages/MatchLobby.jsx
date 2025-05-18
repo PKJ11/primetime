@@ -4,7 +4,7 @@ import io from "socket.io-client";
 import Card from "../Components/Card";
 
 // Replace the current socket initialization with this:
-const socket = io('https://primetime-backend.vercel.app', {
+const socket = io('https://primetimebackendapis.vercel.app', {
   path: '/socket.io',
   transports: ['websocket', 'polling'],
   secure: true,
@@ -95,7 +95,7 @@ const PrimeTime = () => {
 
     socket.on("updatePlayers", (playerNames) => {
       setJoinedPlayers(playerNames);
-      fetch(`https://primetime-backend.vercel.app/api/game/${gameCode}`)
+      fetch(`https://primetimebackendapis.vercel.app/api/game/${gameCode}`)
         .then((res) => res.json())
         .then((data) => setMaxPlayers(data.game.settings.maxPlayers));
       console.log("Updated player names:", playerNames);
