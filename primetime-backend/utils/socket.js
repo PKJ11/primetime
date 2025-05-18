@@ -7,14 +7,19 @@ let io;
 
 const initSocket = (server) => {
   io = socketio(server, {
+    path: '/socket.io', // Must match client configuration
     cors: {
-      origin: "*",
+      origin: [
+        'https://primetime-ruby.vercel.app',
+        'https://primetime-backend.vercel.app'
+      ],
       methods: ["GET", "POST"],
-      credentials: true,
+      credentials: true
     },
-    transports: ["websocket"],
+    transports: ['websocket', 'polling'], // Important for fallback
+    pingTimeout: 60000,
+    pingInterval: 25000
   });
-
   io.on("connection", (socket) => {
     console.log("New client connected:", socket.id);
 

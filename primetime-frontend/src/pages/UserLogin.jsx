@@ -13,12 +13,15 @@ import two from "../assets/images/two.svg";
 import thirteen from "../assets/images/thirteen.svg";
 
 // Replace the current socket initialization with this:
-const socket = io("https://primetime-backend.vercel.app", {
-  path: "/socket.io",  // Explicit path
-  transports: ["websocket", "polling"],  // Fallback to polling if websocket fails
+const socket = io('https://primetime-backend.vercel.app', {
+  path: '/socket.io',
+  transports: ['websocket', 'polling'],
   secure: true,
   withCredentials: true,
-  rejectUnauthorized: false  // Only for development if using self-signed certs
+  reconnection: true,
+  reconnectionAttempts: 5,
+  reconnectionDelay: 1000,
+  rejectUnauthorized: false // Only for development
 });
 
 const UserLogin = () => {
