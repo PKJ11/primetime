@@ -14,7 +14,7 @@ const app = express();
 // CORS Configuration
 const allowedOrigins = [
   'https://primetime-ruby.vercel.app',
-  'https://primetimebackendapis.vercel.app',
+  'https://primetime-backend-9sbd.onrender.com/',
   process.env.FRONTEND_URL || 'http://localhost:5173'
 ];
 
