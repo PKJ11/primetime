@@ -14,7 +14,7 @@ import thirteen from "../assets/images/thirteen.svg";
 
 // Replace the current socket initialization with this:
 const socket = io('https://primetimebackendapis.vercel.app', {
-  path: '/socket.io',
+  path: '/api/socket.io',
   transports: ['websocket'],
   secure: true,
   withCredentials: true,
