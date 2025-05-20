@@ -21,7 +21,7 @@ const AdminLogin = () => {
     e.preventDefault();
     try {
       const response = await axios.post(
-        "https://primetime-backend-9sbd.onrender.com//api/admin/login",
+        "https://primetime-backend-9sbd.onrender.com/api/admin/login",
         {
           email,
           password,

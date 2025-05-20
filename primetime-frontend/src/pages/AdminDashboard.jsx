@@ -23,7 +23,7 @@ const AdminDashboard = () => {
     try {
       const token = localStorage.getItem("token");
       const response = await axios.post(
-        "https://primetime-backend-9sbd.onrender.com//api/game/create",
+        "https://primetime-backend-9sbd.onrender.com/api/game/create",
         { maxPlayers: numPlayers, duration: timerLimit },
         {
           headers: {

@@ -28,7 +28,7 @@ const AdminRegistration = () => {
       return;
     }
     try {
-      const response = await axios.post("https://primetime-backend-9sbd.onrender.com//api/admin/register", {
+      const response = await axios.post("https://primetime-backend-9sbd.onrender.com/api/admin/register", {
         name,
         email,
         password,

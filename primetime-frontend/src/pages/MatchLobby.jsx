@@ -96,7 +96,7 @@ const PrimeTime = () => {
 
     socket.on("updatePlayers", (playerNames) => {
       setJoinedPlayers(playerNames);
-      fetch(`https://primetime-backend-9sbd.onrender.com//api/game/${gameCode}`)
+      fetch(`https://primetime-backend-9sbd.onrender.com/api/game/${gameCode}`)
         .then((res) => res.json())
         .then((data) => setMaxPlayers(data.game.settings.maxPlayers));
       console.log("Updated player names:", playerNames);
