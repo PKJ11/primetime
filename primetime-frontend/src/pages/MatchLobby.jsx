@@ -3,17 +3,18 @@ import { useParams } from "react-router-dom";
 import io from "socket.io-client";
 import Card from "../Components/Card";
 
-// Replace the current socket initialization with this:
-const socket = io('wss://primetimebackendapis.vercel.app', {
+// Update your socket initialization in both components
+const socket = io('wss://primetime-backend-9sbd.onrender.com', {
   path: '/socket.io',
   transports: ['websocket'],
   secure: true,
   withCredentials: true,
   reconnection: true,
   reconnectionAttempts: 5,
-  reconnectionDelay: 1000,
-  rejectUnauthorized: false // Only for development
+  reconnectionDelay: 1000
 });
+
+// Remove the rejectUnauthorized option as it's not needed for production
 
 const PrimeTime = () => {
   const { gameCode: urlGameCode } = useParams();
