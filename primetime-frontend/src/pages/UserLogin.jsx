@@ -13,8 +13,8 @@ import two from "../assets/images/two.svg";
 import thirteen from "../assets/images/thirteen.svg";
 
 // Replace the current socket initialization with this:
-const socket = io('https://primetimebackendapis.vercel.app', {
-  path: '/api/socket.io',
+const socket = io('wss://primetimebackendapis.vercel.app', {
+  path: '/socket.io',
   transports: ['websocket'],
   secure: true,
   withCredentials: true,

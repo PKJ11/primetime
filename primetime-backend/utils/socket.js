@@ -7,7 +7,7 @@ let io;
 
 const initSocket = (server) => {
   io = socketio(server, {
-    path: "/api/socket.io", // Explicit path for Vercel compatibility
+    path: "/socket.io", // Explicit path for Vercel compatibility
     cors: {
       origin: [
         "https://primetime-ruby.vercel.app",

@@ -4,8 +4,8 @@ import io from "socket.io-client";
 import Card from "../Components/Card";
 
 // Replace the current socket initialization with this:
-const socket = io('https://primetimebackendapis.vercel.app', {
-  path: '/api/socket.io',
+const socket = io('wss://primetimebackendapis.vercel.app', {
+  path: '/socket.io',
   transports: ['websocket'],
   secure: true,
   withCredentials: true,
