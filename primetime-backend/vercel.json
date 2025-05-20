@@ -3,12 +3,7 @@
   "builds": [
     {
       "src": "server.js",
-      "use": "@vercel/node",
-      "config": {
-        "maxLambdaSize": "15mb",
-        "includeFiles": ["**/*.js", "**/*.json"],
-        "supportsResponseStreaming": true
-      }
+      "use": "@vercel/node"
     }
   ],
   "routes": [
@@ -22,10 +17,6 @@
     },
     {
       "src": "/api/(.*)",
-      "dest": "server.js"
-    },
-    {
-      "src": "/(.*)",
       "dest": "server.js"
     }
   ]

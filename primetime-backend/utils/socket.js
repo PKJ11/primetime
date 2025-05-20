@@ -7,21 +7,37 @@ let io;
 
 const initSocket = (server) => {
   io = socketio(server, {
-    path: '/socket.io', // Must match client configuration
     cors: {
       origin: [
-        'https://primetime-ruby.vercel.app',
-        'https://primetimebackendapis.vercel.app'
+        "https://primetime-ruby.vercel.app",
+        "https://primetimebackendapis.vercel.app",
       ],
       methods: ["GET", "POST"],
-      credentials: true
+      credentials: true,
     },
-    transports: ['websocket', 'polling'], // Important for fallback
+    transports: ["websocket", "polling"],
     pingTimeout: 60000,
-    pingInterval: 25000
+    pingInterval: 25000,
+  });
+
+  // Add this to handle WebSocket connections specifically
+  io.engine.on("initial_headers", (headers, req) => {
+    headers["Access-Control-Allow-Origin"] =
+      "https://primetime-ruby.vercel.app";
+    headers["Access-Control-Allow-Credentials"] = "true";
+  });
+
+  io.engine.on("headers", (headers, req) => {
+    headers["Access-Control-Allow-Origin"] =
+      "https://primetime-ruby.vercel.app";
+    headers["Access-Control-Allow-Credentials"] = "true";
   });
   io.on("connection", (socket) => {
     console.log("New client connected:", socket.id);
+    // Add ping/pong handlers
+    socket.on("ping", (cb) => {
+      if (typeof cb === "function") cb();
+    });
 
     // Join a game room
     socket.on("joinGame", async ({ gameCode, playerName, grade }) => {
@@ -65,7 +81,9 @@ const initSocket = (server) => {
       const playerNames = game.players.map((p) => p.name);
       io.to(gameCode).emit("updatePlayers", playerNames);
 
-      console.log(`Players in game ${gameCode}: ${game.players.length}/${game.settings.maxPlayers}`);
+      console.log(
+        `Players in game ${gameCode}: ${game.players.length}/${game.settings.maxPlayers}`
+      );
       if (game.players.length === game.settings.maxPlayers && !game.isActive) {
         console.log(`Starting game ${gameCode} automatically`);
         startGame(gameCode);
@@ -77,24 +95,29 @@ const initSocket = (server) => {
       try {
         const game = await Game.findOne({ code: gameCode }).populate("players");
         if (!game || game.isActive) return;
-    
+
         const numOfPlayers = game.players.length;
         const initialTotalCards = 5;
         const availableCards = Array.from({ length: 60 }, (_, i) => i + 1);
         const shuffledCards = shuffle([...availableCards]);
-    
-        const dealtCards = shuffledCards.slice(0, numOfPlayers * initialTotalCards);
-        const stackArray = shuffledCards.slice(numOfPlayers * initialTotalCards);
-    
+
+        const dealtCards = shuffledCards.slice(
+          0,
+          numOfPlayers * initialTotalCards
+        );
+        const stackArray = shuffledCards.slice(
+          numOfPlayers * initialTotalCards
+        );
+
         const playersCards = [];
-        
+
         // Ensure the first player (index 0) gets a 1
         playersCards[0] = [1]; // Start with 1
-        const remainingCards = dealtCards.filter(card => card !== 1); // Remove one 1 from dealtCards
+        const remainingCards = dealtCards.filter((card) => card !== 1); // Remove one 1 from dealtCards
         playersCards[0] = playersCards[0].concat(
           remainingCards.slice(0, initialTotalCards - 1)
         ); // Add 4 more cards
-    
+
         // Deal cards to remaining players
         for (let i = 1; i < numOfPlayers; i++) {
           playersCards[i] = remainingCards.slice(
@@ -102,7 +125,7 @@ const initSocket = (server) => {
             i * initialTotalCards + (initialTotalCards - 1)
           );
         }
-    
+
         // Update player documents
         for (let i = 0; i < numOfPlayers; i++) {
           await Player.findByIdAndUpdate(game.players[i]._id, {
@@ -110,9 +133,9 @@ const initSocket = (server) => {
           });
           console.log(`Player ${i + 1} cards:`, playersCards[i]);
         }
-    
+
         console.log(`Stack array length before save: ${stackArray.length}`);
-    
+
         const gameState = new GameState({
           gameCode,
           players: game.players.map((p) => p._id),
@@ -123,13 +146,15 @@ const initSocket = (server) => {
           winner: null,
           gameOver: false,
         });
-    
+
         await gameState.save();
-        console.log(`Saved gameState stackArray length: ${gameState.stackArray.length}`);
-    
+        console.log(
+          `Saved gameState stackArray length: ${gameState.stackArray.length}`
+        );
+
         game.isActive = true;
         await game.save();
-    
+
         io.to(gameCode).emit("gameStarted", { message: "Game started!" });
         emitGameState(gameCode);
       } catch (err) {
@@ -140,21 +165,29 @@ const initSocket = (server) => {
     // Play a card
     socket.on("playCard", async ({ gameCode, playerId, cardIndex }) => {
       try {
-        console.log(`Received playCard: gameCode=${gameCode}, playerId=${playerId}, cardIndex=${cardIndex}`);
-        const gameState = await GameState.findOne({ gameCode }).populate("players");
+        console.log(
+          `Received playCard: gameCode=${gameCode}, playerId=${playerId}, cardIndex=${cardIndex}`
+        );
+        const gameState = await GameState.findOne({ gameCode }).populate(
+          "players"
+        );
         if (!gameState || gameState.gameOver) {
           console.log("Play rejected: Game not found or over");
           socket.emit("error", "Game not found or over");
           return;
         }
-    
-        const playerIndex = gameState.players.findIndex((p) => p._id.toString() === playerId);
+
+        const playerIndex = gameState.players.findIndex(
+          (p) => p._id.toString() === playerId
+        );
         if (playerIndex !== gameState.currentPlayerIndex) {
-          console.log(`Play rejected: Not player ${playerId}'s turn (currentPlayerIndex=${gameState.currentPlayerIndex})`);
+          console.log(
+            `Play rejected: Not player ${playerId}'s turn (currentPlayerIndex=${gameState.currentPlayerIndex})`
+          );
           socket.emit("error", "Not your turn!");
           return;
         }
-    
+
         const player = gameState.players[playerIndex];
         const card = player.cards[cardIndex];
         if (!card) {
@@ -162,31 +195,36 @@ const initSocket = (server) => {
           socket.emit("error", "Invalid card index");
           return;
         }
-    
+
         console.log(`Player ${playerId} hand: ${player.cards}`);
         console.log(`Attempting to play card: ${card}`);
-    
+
         if (!gameState.floorCards.includes(1) && card !== 1) {
           console.log("Play rejected: Must play 1 first");
           socket.emit("error", "Must play 1 first!");
           return;
         }
-    
-        if (!isPrime(card) && !areAllPrimeFactorsOnFloor(card, gameState.floorCards)) {
-          console.log("Play rejected: Invalid card - prime factors not on floor");
+
+        if (
+          !isPrime(card) &&
+          !areAllPrimeFactorsOnFloor(card, gameState.floorCards)
+        ) {
+          console.log(
+            "Play rejected: Invalid card - prime factors not on floor"
+          );
           socket.emit("error", "Invalid card: prime factors not on floor!");
           return;
         }
-    
+
         player.cards.splice(cardIndex, 1);
         gameState.floorCards.push(card);
-    
+
         if (gameState.stackArray.length > 0) {
           const newCard = gameState.stackArray.shift();
           player.cards.push(newCard);
           console.log(`Player ${playerId} drew card: ${newCard}`);
         }
-    
+
         if (player.cards.length === 0) {
           gameState.winner = playerIndex;
           gameState.gameOver = true;
@@ -194,12 +232,16 @@ const initSocket = (server) => {
         } else {
           gameState.currentPlayerIndex =
             (gameState.currentPlayerIndex + 1) % gameState.players.length;
-          console.log(`Turn passed to player index: ${gameState.currentPlayerIndex}`);
+          console.log(
+            `Turn passed to player index: ${gameState.currentPlayerIndex}`
+          );
         }
-    
+
         await player.save();
         await gameState.save();
-        console.log(`Game state updated: floorCards=${gameState.floorCards}, stackArray length=${gameState.stackArray.length}`);
+        console.log(
+          `Game state updated: floorCards=${gameState.floorCards}, stackArray length=${gameState.stackArray.length}`
+        );
         emitGameState(gameCode);
       } catch (err) {
         console.error("Error playing card:", err);
@@ -210,7 +252,9 @@ const initSocket = (server) => {
     // Pass turn
     socket.on("passTurn", async ({ gameCode, playerId }) => {
       try {
-        const gameState = await GameState.findOne({ gameCode }).populate("players");
+        const gameState = await GameState.findOne({ gameCode }).populate(
+          "players"
+        );
         if (!gameState || gameState.gameOver) return;
 
         const playerIndex = gameState.players.findIndex(
@@ -241,9 +285,13 @@ const initSocket = (server) => {
       console.log("Client disconnected:", socket.id);
       const player = await Player.findOne({ socketId: socket.id });
       if (player) {
-        const gameState = await GameState.findOne({ gameCode: player.gameCode }).populate("players");
+        const gameState = await GameState.findOne({
+          gameCode: player.gameCode,
+        }).populate("players");
         if (gameState && !gameState.gameOver) {
-          const playerIndex = gameState.players.findIndex((p) => p._id.equals(player._id));
+          const playerIndex = gameState.players.findIndex((p) =>
+            p._id.equals(player._id)
+          );
           if (playerIndex === gameState.currentPlayerIndex) {
             gameState.currentPlayerIndex =
               (gameState.currentPlayerIndex + 1) % gameState.players.length;
@@ -277,7 +325,9 @@ const emitGameState = async (gameCode) => {
     gameOver: gameState.gameOver,
   };
 
-  console.log(`Emitting game state for ${gameCode}, stackArray length: ${stateToSend.stackArray.length}`);
+  console.log(
+    `Emitting game state for ${gameCode}, stackArray length: ${stateToSend.stackArray.length}`
+  );
   io.to(gameCode).emit("updateGameState", stateToSend);
 };
 
@@ -302,8 +352,12 @@ const areAllPrimeFactorsOnFloor = (num, floorCards) => {
   if (isPrime(num)) return true;
   const primeFactors = getAllPrimeFactors(num);
   return primeFactors.every((factor) => {
-    const factorCountOnFloor = floorCards.filter((card) => card === factor).length;
-    return factorCountOnFloor >= primeFactors.filter((pf) => pf === factor).length;
+    const factorCountOnFloor = floorCards.filter(
+      (card) => card === factor
+    ).length;
+    return (
+      factorCountOnFloor >= primeFactors.filter((pf) => pf === factor).length
+    );
   });
 };
 
