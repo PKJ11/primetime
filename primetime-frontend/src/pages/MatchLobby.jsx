@@ -131,6 +131,53 @@ const PrimeTime = () => {
     };
   }, [gameCode]);
 
+  const renderPlayerCards = (player, index) => {
+    const isCurrentPlayer = playerId === player.id;
+    
+    return (
+      <div key={player.id} className="bg-white p-4 rounded-lg shadow-md">
+        <h2 className="text-lg font-bold mb-2">
+          {player.name} {isCurrentPlayer ? "(You)" : ""}
+        </h2>
+        <div className="grid grid-cols-5 gap-2">
+          {isCurrentPlayer ? (
+            // Show actual cards for current player
+            player.cards.map((card, cardIndex) => {
+              const isPlayable = currentPlayerIndex === index && isCardPlayable(card);
+              return (
+                <button
+                  key={cardIndex}
+                  className={`p-2 border rounded-md text-center font-medium ${
+                    isPlayable ? "bg-green-300" : "bg-blue-100"
+                  }`}
+                  onClick={() => playCard(cardIndex)}
+                  disabled={!isPlayable}
+                >
+                  {card}
+                </button>
+              );
+            })
+          ) : (
+            // Show card backs for other players
+            Array.from({ length: player.cards.length }).map((_, i) => (
+              <div 
+                key={i} 
+                className="p-2 border rounded-md text-center font-medium bg-gray-200"
+              >
+                🂠
+              </div>
+            ))
+          )}
+        </div>
+        {!isCurrentPlayer && (
+          <p className="mt-2 text-sm text-gray-600">
+            {player.cards.length} card{player.cards.length !== 1 ? 's' : ''}
+          </p>
+        )}
+      </div>
+    );
+  };
+
   console.log("Current playerId:", playerId);
   console.log("Players state:", players);
 
@@ -173,31 +220,7 @@ const PrimeTime = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {players.map((player, index) => (
-              <div key={player.id} className="bg-white p-4 rounded-lg shadow-md">
-                <h2 className="text-lg font-bold mb-2">{player.name}</h2>
-                <div className="grid grid-cols-5 gap-2">
-                  {player.cards.map((card, cardIndex) => {
-                    const isPlayable =
-                      playerId === player.id &&
-                      currentPlayerIndex === index &&
-                      isCardPlayable(card);
-                    return (
-                      <button
-                        key={cardIndex}
-                        className={`p-2 border rounded-md text-center font-medium ${
-                          isPlayable ? "bg-green-300" : "bg-blue-100"
-                        }`}
-                        onClick={() => playCard(cardIndex)}
-                        disabled={!isPlayable}
-                      >
-                        {card}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ))}
+            {players.map((player, index) => renderPlayerCards(player, index))}
           </div>
 
           <p className="mt-4 text-lg font-medium text-white">
