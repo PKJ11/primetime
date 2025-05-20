@@ -7,36 +7,52 @@ let io;
 
 const initSocket = (server) => {
   io = socketio(server, {
+    path: "/api/socket.io", // Explicit path for Vercel compatibility
     cors: {
       origin: [
         "https://primetime-ruby.vercel.app",
         "https://primetimebackendapis.vercel.app",
       ],
-      methods: ["GET", "POST"],
+      methods: ["GET", "POST", "OPTIONS"],
       credentials: true,
     },
     transports: ["websocket", "polling"],
+    allowEIO3: true, // For better compatibility
     pingTimeout: 60000,
     pingInterval: 25000,
+    cookie: false // Disable cookie if not needed
   });
 
-  // Add this to handle WebSocket connections specifically
+  // Add WebSocket specific handlers
   io.engine.on("initial_headers", (headers, req) => {
-    headers["Access-Control-Allow-Origin"] =
-      "https://primetime-ruby.vercel.app";
+    headers["Access-Control-Allow-Origin"] = "https://primetime-ruby.vercel.app";
     headers["Access-Control-Allow-Credentials"] = "true";
+    headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization";
   });
 
   io.engine.on("headers", (headers, req) => {
-    headers["Access-Control-Allow-Origin"] =
-      "https://primetime-ruby.vercel.app";
+    headers["Access-Control-Allow-Origin"] = "https://primetime-ruby.vercel.app";
     headers["Access-Control-Allow-Credentials"] = "true";
   });
+
+  io.of("/").adapter.on("create-room", (room) => {
+    console.log(`Room ${room} was created`);
+  });
+
+  io.of("/").adapter.on("join-room", (room, id) => {
+    console.log(`Socket ${id} has joined room ${room}`);
+  });
+
   io.on("connection", (socket) => {
     console.log("New client connected:", socket.id);
-    // Add ping/pong handlers
-    socket.on("ping", (cb) => {
-      if (typeof cb === "function") cb();
+    
+    // Add connection state handlers
+    socket.on("disconnect", (reason) => {
+      console.log(`Client ${socket.id} disconnected: ${reason}`);
+    });
+
+    socket.on("error", (err) => {
+      console.error(`Socket error for ${socket.id}:`, err);
     });
 
     // Join a game room
