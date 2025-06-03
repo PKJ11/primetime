@@ -31,6 +31,20 @@ const PrimeTime = () => {
   const [maxPlayers, setMaxPlayers] = useState(null);
 
   const availableCards = Array.from({ length: 60 }, (_, i) => i + 1);
+  const hasPlayablePrimes = () => {
+  if (!players[currentPlayerIndex] || currentPlayerIndex === null) return false;
+  
+  const currentPlayer = players.find(p => p.id === playerId);
+  if (!currentPlayer) return false;
+
+  // Must play 1 first if it's not on the floor
+  if (!floorCards.includes(1)) {
+    return currentPlayer.cards.includes(1);
+  }
+
+  // Check for any prime cards
+  return currentPlayer.cards.some(card => isPrime(card));
+};
 
   const isPrime = (num) => {
     if (num <= 1) return false;
@@ -133,6 +147,9 @@ const PrimeTime = () => {
 
   const renderPlayerCards = (player, index) => {
     const isCurrentPlayer = playerId === player.id;
+  const showPassButton = isCurrentPlayer && 
+                        currentPlayerIndex === index && 
+                        !hasPlayablePrimes();
     
     return (
       <div key={player.id} className="bg-white p-4 rounded-lg shadow-md">
@@ -162,9 +179,9 @@ const PrimeTime = () => {
             Array.from({ length: player.cards.length }).map((_, i) => (
               <div 
                 key={i} 
-                className="p-2 border rounded-md text-center font-medium bg-gray-200"
+                
               >
-                🂠
+                
               </div>
             ))
           )}
@@ -174,6 +191,14 @@ const PrimeTime = () => {
             {player.cards.length} card{player.cards.length !== 1 ? 's' : ''}
           </p>
         )}
+        {showPassButton && (
+        <button
+          onClick={() => socket.emit("passTurn", { gameCode, playerId })}
+          className="mt-2 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+        >
+          Pass Turn (No Playable Primes)
+        </button>
+      )}
       </div>
     );
   };
@@ -219,7 +244,7 @@ const PrimeTime = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-rows-1 md:grid-rows-2 lg:grid-rows-3 gap-4">
             {players.map((player, index) => renderPlayerCards(player, index))}
           </div>
 

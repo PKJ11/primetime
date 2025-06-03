@@ -5,6 +5,40 @@ const Game = require("../models/Game");
 
 let io;
 
+const hasPlayablePrimes = (playerCards, floorCards) => {
+  // Must play 1 first if it's not on the floor
+  if (!floorCards.includes(1)) {
+    return playerCards.includes(1);
+  }
+
+  // Check for any prime cards
+  return playerCards.some(card => isPrime(card));
+};
+
+const passTurnAutomatically = async (gameCode, playerId) => {
+  const gameState = await GameState.findOne({ gameCode }).populate("players");
+  
+  if (gameState.stackArray.length > 0) {
+    const playerIndex = gameState.players.findIndex(
+      p => p._id.toString() === playerId
+    );
+    const newCard = gameState.stackArray.shift();
+    gameState.players[playerIndex].cards.push(newCard);
+    await gameState.players[playerIndex].save();
+  }
+
+  gameState.currentPlayerIndex = 
+    (gameState.currentPlayerIndex + 1) % gameState.players.length;
+  await gameState.save();
+  
+  // Notify all players
+  io.to(gameCode).emit("notification", {
+    message: `${gameState.players[playerIndex].name} passed (no playable primes)`
+  });
+
+  emitGameState(gameCode);
+};
+
 const initSocket = (server) => {
   io = socketio(server, {
     path: "/socket.io", // Explicit path for Vercel compatibility
@@ -206,6 +240,13 @@ const initSocket = (server) => {
 
         const player = gameState.players[playerIndex];
         const card = player.cards[cardIndex];
+
+        // Auto-pass if no playable primes
+    if (!hasPlayablePrimes(player.cards, gameState.floorCards)) {
+      console.log(`Player ${playerId} has no playable primes - forcing pass`);
+      await passTurnAutomatically(gameCode, playerId);
+      return;
+    }
         if (!card) {
           console.log("Play rejected: Invalid card index");
           socket.emit("error", "Invalid card index");
@@ -339,6 +380,10 @@ const emitGameState = async (gameCode) => {
     stackArray: gameState.stackArray,
     winner: gameState.winner,
     gameOver: gameState.gameOver,
+    currentPlayerHasPlayablePrimes: hasPlayablePrimes(
+      gameState.players[gameState.currentPlayerIndex]?.cards || [],
+      gameState.floorCards
+    )
   };
 
   console.log(
