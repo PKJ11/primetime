@@ -3,18 +3,15 @@ import { useParams } from "react-router-dom";
 import io from "socket.io-client";
 import Card from "../Components/Card";
 
-// Update your socket initialization in both components
-const socket = io('wss://primetime-backend-9sbd.onrender.com', {
-  path: '/socket.io',
-  transports: ['websocket'],
+const socket = io("wss://primetime-backend-9sbd.onrender.com", {
+  path: "/socket.io",
+  transports: ["websocket"],
   secure: true,
   withCredentials: true,
   reconnection: true,
   reconnectionAttempts: 5,
-  reconnectionDelay: 1000
+  reconnectionDelay: 1000,
 });
-
-// Remove the rejectUnauthorized option as it's not needed for production
 
 const PrimeTime = () => {
   const { gameCode: urlGameCode } = useParams();
@@ -31,20 +28,14 @@ const PrimeTime = () => {
   const [maxPlayers, setMaxPlayers] = useState(null);
 
   const availableCards = Array.from({ length: 60 }, (_, i) => i + 1);
+
   const hasPlayablePrimes = () => {
-  if (!players[currentPlayerIndex] || currentPlayerIndex === null) return false;
-  
-  const currentPlayer = players.find(p => p.id === playerId);
-  if (!currentPlayer) return false;
-
-  // Must play 1 first if it's not on the floor
-  if (!floorCards.includes(1)) {
-    return currentPlayer.cards.includes(1);
-  }
-
-  // Check for any prime cards
-  return currentPlayer.cards.some(card => isPrime(card));
-};
+    if (!players[currentPlayerIndex] || currentPlayerIndex === null) return false;
+    const currentPlayer = players.find((p) => p.id === playerId);
+    if (!currentPlayer) return false;
+    if (!floorCards.includes(1)) return currentPlayer.cards.includes(1);
+    return currentPlayer.cards.some((card) => isPrime(card));
+  };
 
   const isPrime = (num) => {
     if (num <= 1) return false;
@@ -72,17 +63,15 @@ const PrimeTime = () => {
   };
 
   const isCardPlayable = (card) => {
-    if (floorCards.length === 0) return card === 1; // Must play 1 first
+    if (floorCards.length === 0) return card === 1;
     return isPrime(card) || areAllPrimeFactorsOnFloor(card, floorCards);
   };
 
   const playCard = (cardIndex) => {
     if (gameOver) {
       setErrorMessage("Game is over!");
-      console.log("Cannot play: Game is over");
       return;
     }
-    console.log(`Playing card at index ${cardIndex} for player ${playerId} in game ${gameCode}`);
     socket.emit("playCard", { gameCode, playerId, cardIndex });
   };
 
@@ -98,30 +87,19 @@ const PrimeTime = () => {
       grade: "",
     });
 
-    socket.on("connect", () => {
-      console.log("Connected to server:", socket.id);
-    });
-
+    socket.on("connect", () => console.log("Connected to server:", socket.id));
     socket.on("assignPlayerId", (id) => {
       setPlayerId(id);
       localStorage.setItem("playerId", id);
-      console.log("Assigned player ID:", id);
     });
-
     socket.on("updatePlayers", (playerNames) => {
       setJoinedPlayers(playerNames);
       fetch(`https://primetime-backend-9sbd.onrender.com/api/game/${gameCode}/players`)
         .then((res) => res.json())
         .then((data) => setMaxPlayers(data.game.settings.maxPlayers));
-      console.log("Updated player names:", playerNames);
     });
-
-    socket.on("gameStarted", (data) => {
-      console.log("Game started:", data.message);
-    });
-
+    socket.on("gameStarted", (data) => console.log("Game started:", data.message));
     socket.on("updateGameState", (gameState) => {
-      console.log("Received game state:", gameState);
       setPlayers(gameState.players);
       setFloorCards(gameState.floorCards);
       setCurrentPlayerIndex(gameState.currentPlayerIndex);
@@ -129,11 +107,7 @@ const PrimeTime = () => {
       setWinner(gameState.winner);
       setGameOver(gameState.gameOver);
     });
-
-    socket.on("error", (msg) => {
-      setErrorMessage(msg);
-      console.log("Error received:", msg);
-    });
+    socket.on("error", (msg) => setErrorMessage(msg));
 
     return () => {
       socket.off("connect");
@@ -145,116 +119,101 @@ const PrimeTime = () => {
     };
   }, [gameCode]);
 
-  const renderPlayerCards = (player, index) => {
-    const isCurrentPlayer = playerId === player.id;
-  const showPassButton = isCurrentPlayer && 
-                        currentPlayerIndex === index && 
-                        !hasPlayablePrimes();
-    
-    return (
-      <div key={player.id} className="bg-white p-4 rounded-lg shadow-md">
-        <h2 className="text-lg font-bold mb-2">
-          {player.name} {isCurrentPlayer ? "(You)" : ""}
-        </h2>
-        <div className="grid grid-cols-5 gap-2">
-          {isCurrentPlayer ? (
-            // Show actual cards for current player
-            player.cards.map((card, cardIndex) => {
-              const isPlayable = currentPlayerIndex === index && isCardPlayable(card);
-              return (
-                <button
-                  key={cardIndex}
-                  className={`p-2 border rounded-md text-center font-medium ${
-                    isPlayable ? "bg-green-300" : "bg-blue-100"
-                  }`}
-                  onClick={() => playCard(cardIndex)}
-                  disabled={!isPlayable}
-                >
-                  {card}
-                </button>
-              );
-            })
-          ) : (
-            // Show card backs for other players
-            Array.from({ length: player.cards.length }).map((_, i) => (
-              <div 
-                key={i} 
-                
-              >
-                
-              </div>
-            ))
-          )}
+  const renderOtherPlayers = () => (
+    <div className="flex gap-4 overflow-x-auto pb-4">
+      {players.filter(p => p.id !== playerId).map(player => (
+        <div key={player.id} className="bg-white p-3 rounded-lg shadow-md min-w-[120px]">
+          <h3 className="text-center font-bold mb-2">{player.name}</h3>
+          <div className="flex items-center justify-center gap-2">
+            <img
+              src="https://ik.imagekit.io/pratik11/primetimeuser.JPG?updatedAt=1753167372920"
+              alt="Player"
+              className="h-10 w-10"
+            />
+            <span className="bg-blue-100 px-2 py-1 rounded-full text-xs font-semibold">
+              {player.cards.length} Cards
+            </span>
+          </div>
         </div>
-        {!isCurrentPlayer && (
-          <p className="mt-2 text-sm text-gray-600">
-            {player.cards.length} card{player.cards.length !== 1 ? 's' : ''}
-          </p>
+      ))}
+    </div>
+  );
+
+  const renderCurrentPlayer = () => {
+    const currentPlayer = players.find(p => p.id === playerId);
+    if (!currentPlayer) return null;
+
+    return (
+      <div className="bg-white p-4 rounded-lg shadow-md mt-4">
+        <h2 className="text-lg font-bold mb-2">Your Cards</h2>
+        <div className="grid grid-cols-5 gap-2">
+          {currentPlayer.cards.map((card, index) => {
+            const isPlayable = currentPlayerIndex === players.findIndex(p => p.id === playerId) && isCardPlayable(card);
+            return (
+              <button
+                key={index}
+                className={`p-2 border rounded-md text-center ${isPlayable ? "bg-green-300" : "bg-blue-100"}`}
+                onClick={() => playCard(index)}
+                disabled={!isPlayable}
+              >
+                {card}
+              </button>
+            );
+          })}
+        </div>
+        {currentPlayerIndex === players.findIndex(p => p.id === playerId) && !hasPlayablePrimes() && (
+          <button
+            onClick={() => socket.emit("passTurn", { gameCode, playerId })}
+            className="mt-2 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+          >
+            Pass Turn
+          </button>
         )}
-        {showPassButton && (
-        <button
-          onClick={() => socket.emit("passTurn", { gameCode, playerId })}
-          className="mt-2 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
-        >
-          Pass Turn (No Playable Primes)
-        </button>
-      )}
       </div>
     );
   };
 
-  console.log("Current playerId:", playerId);
-  console.log("Players state:", players);
-
   return (
-    <div className="bg">
-      <div className="max-w-4xl mx-auto p-6 rounded-lg shadow-md" style={{ backgroundColor: "#124d68" }}>
-        <div className="mt-6">
-          <div className="mb-4">
-            <p className="text-lg font-medium text-white">Game Code: {gameCode}</p>
-          </div>
-
+    <div className="min-h-screen bg-[#124d68]">
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-white">Game Code: {gameCode}</h1>
           {maxPlayers && (
-            <p className="text-lg font-medium text-white mb-4">
+            <p className="text-white">
               Players: {joinedPlayers.length}/{maxPlayers}
-              {joinedPlayers.length < maxPlayers && " (Waiting for players...)"}
+              {joinedPlayers.length < maxPlayers && " (Waiting...)"}
             </p>
           )}
-
-          {errorMessage && (
-            <p className="text-red-500 font-medium mb-4">{errorMessage}</p>
-          )}
+          {errorMessage && <p className="text-red-500">{errorMessage}</p>}
           {winner !== null && (
-            <p className="text-green-500 font-bold mb-4">
-              Player {winner + 1} won! Congratulations!
+            <p className="text-green-500 font-bold">
+              Winner: {players[winner]?.name}
             </p>
           )}
+        </div>
 
-          <div className="mb-6 bg-white p-4 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4">Floor Cards</h2>
-            <div className="flex flex-wrap">
-              {availableCards.map((card, index) => (
-                <div key={index} className="p-2">
-                  <Card
-                    number={card}
-                    label={floorCards.includes(card) ? "ON FLOOR" : ""}
-                  />
-                </div>
-              ))}
-            </div>
+        <div className="mb-6 bg-white p-4 rounded-lg">
+          <h2 className="text-xl font-semibold mb-4">Floor Cards</h2>
+          <div className="flex flex-wrap">
+            {availableCards.map((card) => (
+              <div key={card} className="p-1">
+                <Card number={card} label={floorCards.includes(card) ? "ON FLOOR" : ""} />
+              </div>
+            ))}
           </div>
+        </div>
 
-          <div className="grid grid-rows-1 md:grid-rows-2 lg:grid-rows-3 gap-4">
-            {players.map((player, index) => renderPlayerCards(player, index))}
-          </div>
+        <div className="mb-4">
+          <h2 className="text-lg font-medium text-white mb-2">Other Players</h2>
+          {renderOtherPlayers()}
+        </div>
 
-          <p className="mt-4 text-lg font-medium text-white">
-            Cards in Stack: {stackArray.length}
-          </p>
+        {renderCurrentPlayer()}
+
+        <div className="mt-4 flex justify-between text-white">
+          <p>Cards in Stack: {stackArray.length}</p>
           {currentPlayerIndex !== null && (
-            <p className="mt-4 text-lg font-medium text-white">
-              Current Turn: {players[currentPlayerIndex]?.name}
-            </p>
+            <p>Current Turn: {players[currentPlayerIndex]?.name}</p>
           )}
         </div>
       </div>

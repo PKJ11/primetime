@@ -21,7 +21,6 @@ function App() {
         <Route path="/game-lobby/:gameCode" element={<MatchLobby />} />
         <Route path="/results" element={<ResultPage />} />
       </Routes>
-      {/* </div> */}
     </Router>
   );
 }
