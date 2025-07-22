@@ -249,7 +249,7 @@ const PrimeTime = () => {
               return (
                 <SwiperSlide key={index} className="!w-auto">
                   <div
-                    className={`relative flex flex-col items-center justify-center h-20 w-16 rounded-lg overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-105 ${
+                    className={`relative flex flex-col items-center justify-center h-50 w-30 rounded-lg overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-105 ${
                       isPlayable ? "" : "opacity-60"
                     }`}
                     onClick={isPlayable ? () => playCard(index) : undefined}
