@@ -5,6 +5,38 @@ const Game = require("../models/Game");
 
 let io;
 
+const generateDeck = () => {
+  const deck = [];
+  
+  // Add cards according to the specified distribution
+  deck.push(1); // 1 - 1 time
+  
+  // 2 - 4 times
+  for (let i = 0; i < 4; i++) deck.push(2);
+  
+  // 3 - 3 times
+  for (let i = 0; i < 3; i++) deck.push(3);
+  
+  // 4 - 1 time
+  deck.push(4);
+  
+  // 5 - 2 times
+  for (let i = 0; i < 2; i++) deck.push(5);
+  
+  // 6 - 1 time
+  deck.push(6);
+  
+  // 7 - 2 times
+  for (let i = 0; i < 2; i++) deck.push(7);
+  
+  // Other numbers (8-60) - 1 time each
+  for (let i = 8; i <= 60; i++) {
+    deck.push(i);
+  }
+  
+  return deck;
+};
+
 const hasPlayablePrimes = (playerCards, floorCards) => {
   // Must play 1 first if it's not on the floor
   if (!floorCards.includes(1)) {
@@ -148,8 +180,8 @@ const initSocket = (server) => {
 
         const numOfPlayers = game.players.length;
         const initialTotalCards = 5;
-        const availableCards = Array.from({ length: 60 }, (_, i) => i + 1);
-        const shuffledCards = shuffle([...availableCards]);
+        const availableCards = generateDeck(); // Replace the Array.from with this
+    const shuffledCards = shuffle([...availableCards]);
 
         const dealtCards = shuffledCards.slice(
           0,

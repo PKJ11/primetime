@@ -85,7 +85,16 @@ const PrimeTime = () => {
     60: "bg-purple-700",
   };
 
-  const availableCards = Array.from({ length: 60 }, (_, i) => i + 1);
+  const availableCards = [
+  1, 
+  2, 2, 2, 2, // four 2's
+  3, 3, 3,    // three 3's
+  4, 
+  5, 5,       // two 5's
+  6, 
+  7, 7,       // two 7's
+  ...Array.from({ length: 53 }, (_, i) => i + 8) // 8-60 (one each)
+];
 
   const hasPlayablePrimes = () => {
     if (!players[currentPlayerIndex] || currentPlayerIndex === null)
