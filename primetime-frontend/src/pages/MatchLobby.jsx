@@ -2,6 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import io from "socket.io-client";
 import Card from "../Components/Card";
+import { useRef } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, FreeMode } from "swiper/modules";
+
+// Import Swiper styles
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/free-mode";
 
 const socket = io("wss://primetime-backend-9sbd.onrender.com", {
   path: "/socket.io",
@@ -14,9 +22,14 @@ const socket = io("wss://primetime-backend-9sbd.onrender.com", {
 });
 
 const PrimeTime = () => {
+  const swiperRef = useRef(null);
   const { gameCode: urlGameCode } = useParams();
-  const [gameCode] = useState(urlGameCode || localStorage.getItem("gameCode") || "");
-  const [playerId, setPlayerId] = useState(localStorage.getItem("playerId") || null);
+  const [gameCode] = useState(
+    urlGameCode || localStorage.getItem("gameCode") || ""
+  );
+  const [playerId, setPlayerId] = useState(
+    localStorage.getItem("playerId") || null
+  );
   const [players, setPlayers] = useState([]);
   const [floorCards, setFloorCards] = useState([]);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(null);
@@ -26,11 +39,57 @@ const PrimeTime = () => {
   const [errorMessage, setErrorMessage] = useState("");
   const [joinedPlayers, setJoinedPlayers] = useState([]);
   const [maxPlayers, setMaxPlayers] = useState(null);
+  const colorMap = {
+    1: "bg-gray-500",
+    4: "bg-blue-500",
+    6: "bg-green-500",
+    8: "bg-purple-500",
+    9: "bg-pink-500",
+    10: "bg-teal-500",
+    12: "bg-yellow-500",
+    14: "bg-red-500",
+    15: "bg-indigo-500",
+    16: "bg-cyan-500",
+    18: "bg-lime-500",
+    20: "bg-amber-500",
+    21: "bg-rose-500",
+    22: "bg-emerald-500",
+    24: "bg-fuchsia-500",
+    25: "bg-violet-500",
+    26: "bg-sky-500",
+    27: "bg-zinc-500",
+    28: "bg-slate-500",
+    30: "bg-orange-600",
+    32: "bg-blue-600",
+    33: "bg-teal-600",
+    34: "bg-rose-600",
+    35: "bg-yellow-600",
+    36: "bg-purple-600",
+    38: "bg-pink-600",
+    39: "bg-lime-600",
+    40: "bg-amber-600",
+    42: "bg-indigo-600",
+    44: "bg-red-600",
+    45: "bg-cyan-600",
+    46: "bg-emerald-600",
+    48: "bg-fuchsia-600",
+    49: "bg-violet-600",
+    50: "bg-sky-600",
+    51: "bg-zinc-600",
+    52: "bg-slate-600",
+    54: "bg-orange-700",
+    55: "bg-blue-700",
+    56: "bg-teal-700",
+    57: "bg-rose-700",
+    58: "bg-yellow-700",
+    60: "bg-purple-700",
+  };
 
   const availableCards = Array.from({ length: 60 }, (_, i) => i + 1);
 
   const hasPlayablePrimes = () => {
-    if (!players[currentPlayerIndex] || currentPlayerIndex === null) return false;
+    if (!players[currentPlayerIndex] || currentPlayerIndex === null)
+      return false;
     const currentPlayer = players.find((p) => p.id === playerId);
     if (!currentPlayer) return false;
     if (!floorCards.includes(1)) return currentPlayer.cards.includes(1);
@@ -94,11 +153,15 @@ const PrimeTime = () => {
     });
     socket.on("updatePlayers", (playerNames) => {
       setJoinedPlayers(playerNames);
-      fetch(`https://primetime-backend-9sbd.onrender.com/api/game/${gameCode}/players`)
+      fetch(
+        `https://primetime-backend-9sbd.onrender.com/api/game/${gameCode}/players`
+      )
         .then((res) => res.json())
         .then((data) => setMaxPlayers(data.game.settings.maxPlayers));
     });
-    socket.on("gameStarted", (data) => console.log("Game started:", data.message));
+    socket.on("gameStarted", (data) =>
+      console.log("Game started:", data.message)
+    );
     socket.on("updateGameState", (gameState) => {
       setPlayers(gameState.players);
       setFloorCards(gameState.floorCards);
@@ -121,54 +184,138 @@ const PrimeTime = () => {
 
   const renderOtherPlayers = () => (
     <div className="flex gap-4 overflow-x-auto pb-4">
-      {players.filter(p => p.id !== playerId).map(player => (
-        <div key={player.id} className="bg-white p-3 rounded-lg shadow-md min-w-[120px]">
-          <h3 className="text-center font-bold mb-2">{player.name}</h3>
-          <div className="flex items-center justify-center gap-2">
-            <img
-              src="https://ik.imagekit.io/pratik11/primetimeuser.JPG?updatedAt=1753167372920"
-              alt="Player"
-              className="h-10 w-10"
-            />
-            <span className="bg-blue-100 px-2 py-1 rounded-full text-xs font-semibold">
-              {player.cards.length} Cards
-            </span>
+      {players
+        .filter((p) => p.id !== playerId)
+        .map((player) => (
+          <div
+            key={player.id}
+            className="bg-white p-3 rounded-lg shadow-md min-w-[120px]"
+          >
+            <h3 className="text-center font-bold mb-2">{player.name}</h3>
+            <div className="flex items-center justify-center gap-2">
+              <img
+                src="https://ik.imagekit.io/pratik11/primetimeuser.JPG?updatedAt=1753167372920"
+                alt="Player"
+                className="h-10 w-10"
+              />
+              <span className="bg-blue-100 px-2 py-1 rounded-full text-xs font-semibold">
+                {player.cards.length} Cards
+              </span>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
     </div>
   );
 
   const renderCurrentPlayer = () => {
-    const currentPlayer = players.find(p => p.id === playerId);
+    const currentPlayer = players.find((p) => p.id === playerId);
     if (!currentPlayer) return null;
 
     return (
       <div className="bg-white p-4 rounded-lg shadow-md mt-4">
-        <h2 className="text-lg font-bold mb-2">Your Cards</h2>
-        <div className="grid grid-cols-5 gap-2">
-          {currentPlayer.cards.map((card, index) => {
-            const isPlayable = currentPlayerIndex === players.findIndex(p => p.id === playerId) && isCardPlayable(card);
-            return (
-              <button
-                key={index}
-                className={`p-2 border rounded-md text-center ${isPlayable ? "bg-green-300" : "bg-blue-100"}`}
-                onClick={() => playCard(index)}
-                disabled={!isPlayable}
-              >
-                {card}
-              </button>
-            );
-          })}
-        </div>
-        {currentPlayerIndex === players.findIndex(p => p.id === playerId) && !hasPlayablePrimes() && (
-          <button
-            onClick={() => socket.emit("passTurn", { gameCode, playerId })}
-            className="mt-2 px-4 py-2 bg-yellow-500 text-white rounded-md hover:bg-yellow-600"
+        {/* <h2 className="text-lg font-bold mb-4 text-gray-800">Your Cards</h2> */}
+        <div className="relative">
+          <Swiper
+            ref={swiperRef}
+            slidesPerView={5}
+            slidesPerGroup={1} // Slide one card at a time
+            spaceBetween={12}
+            modules={[Navigation]}
+            navigation={{
+              nextEl: ".swiper-button-next",
+              prevEl: ".swiper-button-prev",
+            }}
+            breakpoints={{
+              320: { slidesPerView: 3 },
+              640: { slidesPerView: 4 },
+              768: { slidesPerView: 5 },
+              1024: { slidesPerView: 6 },
+            }}
+            // className="!px-10"
           >
-            Pass Turn
-          </button>
-        )}
+            {currentPlayer.cards.map((card, index) => {
+              const isPlayable =
+                currentPlayerIndex ===
+                  players.findIndex((p) => p.id === playerId) &&
+                isCardPlayable(card);
+              const isPrime = [
+                2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
+              ].includes(card);
+
+              const bgColor = isPrime
+                ? "bg-orange-500"
+                : colorMap[card] || "bg-gray-500";
+
+              return (
+                <SwiperSlide key={index} className="!w-auto">
+                  <div
+                    className={`relative flex flex-col items-center justify-center h-20 w-16 rounded-lg overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-105 ${
+                      isPlayable ? "" : "opacity-60"
+                    }`}
+                    onClick={isPlayable ? () => playCard(index) : undefined}
+                  >
+                    {/* Card background with rays */}
+                    <div
+                      className="absolute inset-0 bg-white"
+                      style={{
+                        backgroundImage:
+                          "repeating-conic-gradient(transparent 0deg, transparent 15deg, rgba(0,0,0,0.05) 15deg, rgba(0,0,0,0.05) 30deg)",
+                        transform: "rotate(45deg)",
+                        zIndex: 0,
+                      }}
+                    ></div>
+
+                    {/* Main card color */}
+                    <div
+                      className={`absolute bottom-0 h-2 w-full ${bgColor} rounded-b-lg z-10`}
+                    ></div>
+
+                    {/* Number circle */}
+                    <div
+                      className={`relative flex items-center justify-center h-8 w-8 ${bgColor} rounded-full text-white text-sm font-bold shadow-md border-2 border-white z-10`}
+                    >
+                      {card}
+                    </div>
+
+                    {/* Playable indicator */}
+                    {isPlayable && (
+                      <div className="absolute top-1 right-1 h-4 w-4 bg-green-500 rounded-full flex items-center justify-center text-white text-[0.5rem] font-bold z-20">
+                        ✓
+                      </div>
+                    )}
+                  </div>
+                </SwiperSlide>
+              );
+            })}
+          </Swiper>
+
+          {/* Always visible navigation buttons */}
+         
+        </div>
+
+        {currentPlayerIndex === players.findIndex((p) => p.id === playerId) &&
+          !hasPlayablePrimes() && (
+            <button
+              onClick={() => socket.emit("passTurn", { gameCode, playerId })}
+              className="mt-4 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors duration-200 flex items-center justify-center gap-2"
+            >
+              <span>Pass Turn</span>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M14 5l7 7m0 0l-7 7m7-7H3"
+                />
+              </svg>
+            </button>
+          )}
       </div>
     );
   };
@@ -177,7 +324,9 @@ const PrimeTime = () => {
     <div className="min-h-screen bg-[#124d68]">
       <div className="max-w-4xl mx-auto p-6">
         <div className="mb-4">
-          <h1 className="text-2xl font-bold text-white">Game Code: {gameCode}</h1>
+          <h1 className="text-2xl font-bold text-white">
+            Game Code: {gameCode}
+          </h1>
           {maxPlayers && (
             <p className="text-white">
               Players: {joinedPlayers.length}/{maxPlayers}
@@ -197,7 +346,10 @@ const PrimeTime = () => {
           <div className="flex flex-wrap">
             {availableCards.map((card) => (
               <div key={card} className="p-1">
-                <Card number={card} label={floorCards.includes(card) ? "ON FLOOR" : ""} />
+                <Card
+                  number={card}
+                  label={floorCards.includes(card) ? "ON FLOOR" : ""}
+                />
               </div>
             ))}
           </div>
