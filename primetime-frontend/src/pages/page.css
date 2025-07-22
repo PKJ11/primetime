@@ -1,0 +1,20 @@
+.swiper-button-prev::after,
+.swiper-button-next::after {
+  content: "";
+  display: inline-block;
+  width: 0;
+  height: 0;
+  border-style: solid;
+}
+
+/* Left-facing triangle */
+.swiper-button-prev::after {
+  border-width: 10px 12px 10px 0;
+  border-color: transparent white transparent transparent; /* Blue right border only */
+}
+
+/* Right-facing triangle */
+.swiper-button-next::after {
+  border-width: 10px 0 10px 12px;
+  border-color: transparent transparent transparent white; /* Blue left border only */
+}

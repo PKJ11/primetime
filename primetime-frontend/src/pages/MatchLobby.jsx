@@ -5,6 +5,7 @@ import Card from "../Components/Card";
 import { useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode } from "swiper/modules";
+import "./page.css"
 
 // Import Swiper styles
 import "swiper/css";
@@ -85,6 +86,7 @@ const PrimeTime = () => {
     60: "bg-purple-700",
   };
 
+  
   const availableCards = [
   1, 
   2, 2, 2, 2, // four 2's
@@ -234,8 +236,9 @@ const PrimeTime = () => {
               nextEl: ".swiper-button-next",
               prevEl: ".swiper-button-prev",
             }}
-            // Remove breakpoints to maintain exactly 5 cards visible
-            className="!overflow-visible" // Allow cards to extend beyond container
+            
+            className="overflow-hidden w-[90%] mx-auto" 
+
           >
             {currentPlayer.cards.map((card, index) => {
               const isPlayable =
