@@ -43,7 +43,7 @@ const AdminRegistration = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen bg-[#134E68] relative">
+    <div className="flex flex-col items-center justify-center  bg-[#134E68] relative min-h-screen">
       {/* Logo with 25px gap below */}
       <div className="absolute top-10 w-[284px] h-[147px] mb-[25px]">
         <img src={primetimeLogo} alt="Prime Time Logo" className="w-[100%]" />
@@ -130,7 +130,7 @@ const AdminRegistration = () => {
       />
 
       {/* Registration Form */}
-      <div className="bg-white w-[780px] p-12 rounded-[45px] shadow-lg flex flex-col items-center  absolute top-60">
+      <div className="bg-white w-[75%] p-12 rounded-[45px] shadow-lg flex flex-col items-center  absolute top-60">
         <h1 className="text-[40px] font-[900] text-center mb-[25px] text-[#F36C40]">
           Admin Registration
         </h1>

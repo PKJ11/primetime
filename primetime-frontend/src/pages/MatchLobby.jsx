@@ -5,6 +5,15 @@ import Card from "../Components/Card";
 import { useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, FreeMode } from "swiper/modules";
+import nineteen from "../assets/images/nineteen.svg"; // Import the images
+import five from "../assets/images/five.svg";
+import eleven from "../assets/images/eleven.svg";
+import three from "../assets/images/three.svg"; // New imports
+import yellowPlus from "../assets/images/yellowplus.svg";
+import greenPlus from "../assets/images/greenplus.svg";
+import seven from "../assets/images/seven.svg";
+import two from "../assets/images/two.svg";
+import thirteen from "../assets/images/thirteen.svg";
 
 // Import Swiper styles
 import "swiper/css";
@@ -213,6 +222,85 @@ const PrimeTime = () => {
 
     return (
       <div className="bg-white p-4 rounded-lg shadow-md mt-4">
+      <img
+              src={nineteen}
+              alt="Nineteen"
+              className="absolute"
+              style={{ top: "53px", left: "65px", width: "100px" }}
+            />
+      
+            {/* Image: five.svg */}
+            <img
+              src={five}
+              alt="Five"
+              className="absolute"
+              style={{ top: "329px", left: "-12px", width: "100px" }}
+            />
+      
+            {/* Image: eleven.svg */}
+            <img
+              src={eleven}
+              alt="Eleven"
+              className="absolute"
+              style={{ top: "665px", left: "-15px", width: "100px" }}
+            />
+      
+            {/* Image: three.svg */}
+            <img
+              src={three}
+              alt="Three"
+              className="absolute"
+              style={{ top: "80%", left: "-5px", width: "100px" }}
+            />
+      
+            {/* Image: yellow-plus.svg */}
+            <img
+              src={yellowPlus}
+              alt="Yellow Plus"
+              className="absolute"
+              style={{ bottom: "0", left: "23px", width: "100px" }}
+            />
+      
+            {/* Image: green-plus.svg */}
+            <img
+              src={greenPlus}
+              alt="Green Plus"
+              className="absolute"
+              style={{ top: "85px", right: "93px", width: "100px" }}
+            />
+      
+            {/* Image: seven.svg */}
+            <img
+              src={seven}
+              alt="Seven"
+              className="absolute"
+              style={{ top: "201px", right: "0", width: "100px" }}
+            />
+      
+            {/* Image: two.svg */}
+            <img
+              src={two}
+              alt="Two"
+              className="absolute"
+              style={{ top: "553px", right: "10px", width: "100px" }}
+            />
+      
+            {/* Image: thirteen.svg */}
+            <img
+              src={thirteen}
+              alt="Thirteen"
+              className="absolute"
+              style={{ top: "80%", right: "-10px", width: "100px" }}
+            />
+      
+            {/* Image: nineteen.svg (bottom right) */}
+            <img
+              src={nineteen}
+              alt="Nineteen"
+              className="absolute"
+              style={{ bottom: "0", right: "25px", width: "100px" }}
+            />
+      
         <div className="relative">
           <Swiper
             ref={swiperRef}
@@ -289,7 +377,7 @@ const PrimeTime = () => {
           <button className="swiper-button-prev absolute left-0 bottom-0  z-20 bg-orange-200 hover:bg-orange-600 rounded-full p-1 w-8 h-8 flex items-center justify-center shadow-lg">
             
           </button>
-          <button className="swiper-button-next absolute right-0 top-1/2 z-20 bg-orange-200 hover:bg-orange-600 rounded-full p-1 w-8 h-8 flex items-center justify-center shadow-lg">
+          <button className="swiper-button-next absolute right-0 bottom-0 z-20 bg-orange-200 hover:bg-orange-600 rounded-full p-1 w-8 h-8 flex items-center justify-center shadow-lg">
             
           </button>
         </div>
