@@ -212,112 +212,116 @@ const PrimeTime = () => {
     if (!currentPlayer) return null;
 
     return (
-      <div className="bg-white p-4 rounded-lg shadow-md mt-4">
-        {/* <h2 className="text-lg font-bold mb-4 text-gray-800">Your Cards</h2> */}
-        <div className="relative">
-          <Swiper
-            ref={swiperRef}
-            slidesPerView={5}
-            slidesPerGroup={1} // Slide one card at a time
-            spaceBetween={12}
-            modules={[Navigation]}
-            navigation={{
-              nextEl: ".swiper-button-next",
-              prevEl: ".swiper-button-prev",
-            }}
-            breakpoints={{
-              320: { slidesPerView: 3 },
-              640: { slidesPerView: 4 },
-              768: { slidesPerView: 5 },
-              1024: { slidesPerView: 6 },
-            }}
-            // className="!px-10"
-          >
-            {currentPlayer.cards.map((card, index) => {
-              const isPlayable =
-                currentPlayerIndex ===
-                  players.findIndex((p) => p.id === playerId) &&
-                isCardPlayable(card);
-              const isPrime = [
-                2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
-              ].includes(card);
+  <div className="bg-white p-4 rounded-lg shadow-md mt-4">
+    <div className="relative">
+      <Swiper
+        ref={swiperRef}
+        slidesPerView={5}
+        slidesPerGroup={1}
+        spaceBetween={16} // Increased space between cards
+        modules={[Navigation]}
+        navigation={{
+          nextEl: ".swiper-button-next",
+          prevEl: ".swiper-button-prev",
+        }}
+        // Remove breakpoints to maintain exactly 5 cards visible
+        className="!overflow-visible" // Allow cards to extend beyond container
+      >
+        {currentPlayer.cards.map((card, index) => {
+          const isPlayable =
+            currentPlayerIndex ===
+              players.findIndex((p) => p.id === playerId) &&
+            isCardPlayable(card);
+          const isPrime = [
+            2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
+          ].includes(card);
 
-              const bgColor = isPrime
-                ? "bg-orange-500"
-                : colorMap[card] || "bg-gray-500";
+          const bgColor = isPrime
+            ? "bg-orange-500"
+            : colorMap[card] || "bg-gray-500";
 
-              return (
-                <SwiperSlide key={index} className="!w-auto">
-                  <div
-                    className={`relative flex flex-col items-center justify-center h-50 w-30 rounded-lg overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-105 ${
-                      isPlayable ? "" : "opacity-60"
-                    }`}
-                    onClick={isPlayable ? () => playCard(index) : undefined}
-                  >
-                    {/* Card background with rays */}
-                    <div
-                      className="absolute inset-0 bg-white"
-                      style={{
-                        backgroundImage:
-                          "repeating-conic-gradient(transparent 0deg, transparent 15deg, rgba(0,0,0,0.05) 15deg, rgba(0,0,0,0.05) 30deg)",
-                        transform: "rotate(45deg)",
-                        zIndex: 0,
-                      }}
-                    ></div>
-
-                    {/* Main card color */}
-                    <div
-                      className={`absolute bottom-0 h-2 w-full ${bgColor} rounded-b-lg z-10`}
-                    ></div>
-
-                    {/* Number circle */}
-                    <div
-                      className={`relative flex items-center justify-center h-8 w-8 ${bgColor} rounded-full text-white text-sm font-bold shadow-md border-2 border-white z-10`}
-                    >
-                      {card}
-                    </div>
-
-                    {/* Playable indicator */}
-                    {isPlayable && (
-                      <div className="absolute top-1 right-1 h-4 w-4 bg-green-500 rounded-full flex items-center justify-center text-white text-[0.5rem] font-bold z-20">
-                        ✓
-                      </div>
-                    )}
-                  </div>
-                </SwiperSlide>
-              );
-            })}
-          </Swiper>
-
-          {/* Always visible navigation buttons */}
-         
-        </div>
-
-        {currentPlayerIndex === players.findIndex((p) => p.id === playerId) &&
-          !hasPlayablePrimes() && (
-            <button
-              onClick={() => socket.emit("passTurn", { gameCode, playerId })}
-              className="mt-4 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors duration-200 flex items-center justify-center gap-2"
-            >
-              <span>Pass Turn</span>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+          return (
+            <SwiperSlide key={index} className="!w-[20%]"> {/* Each slide takes exactly 20% width */}
+              <div
+                className={`relative flex flex-col items-center justify-center h-28 w-20 rounded-lg overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-105 mx-1 ${
+                  isPlayable ? "" : "opacity-60"
+                }`}
+                onClick={isPlayable ? () => playCard(index) : undefined}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M14 5l7 7m0 0l-7 7m7-7H3"
-                />
-              </svg>
-            </button>
-          )}
-      </div>
-    );
+                {/* Card background with rays */}
+                <div
+                  className="absolute inset-0 bg-white"
+                  style={{
+                    backgroundImage:
+                      "repeating-conic-gradient(transparent 0deg, transparent 15deg, rgba(0,0,0,0.05) 15deg, rgba(0,0,0,0.05) 30deg)",
+                    transform: "rotate(45deg)",
+                    zIndex: 0,
+                  }}
+                ></div>
+
+                {/* Main card color */}
+                <div
+                  className={`absolute bottom-0 h-3 w-full ${bgColor} rounded-b-lg z-10`}
+                ></div>
+
+                {/* Number circle - made larger */}
+                <div
+                  className={`relative flex items-center justify-center h-10 w-10 ${bgColor} rounded-full text-white text-base font-bold shadow-md border-2 border-white z-10`}
+                >
+                  {card}
+                </div>
+
+                {/* Playable indicator - made slightly larger */}
+                {isPlayable && (
+                  <div className="absolute top-1 right-1 h-5 w-5 bg-green-500 rounded-full flex items-center justify-center text-white text-xs font-bold z-20">
+                    ✓
+                  </div>
+                )}
+              </div>
+            </SwiperSlide>
+          );
+        })}
+      </Swiper>
+
+      {/* Navigation buttons - positioned closer to the cards */}
+      <button className="swiper-button-prev absolute left-0 top-1/2 -translate-y-1/2 z-20 bg-orange-500 hover:bg-orange-600 rounded-full p-1 w-8 h-8 flex items-center justify-center shadow-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+        </svg>
+      </button>
+      <button className="swiper-button-next absolute right-0 top-1/2 -translate-y-1/2 z-20 bg-orange-500 hover:bg-orange-600 rounded-full p-1 w-8 h-8 flex items-center justify-center shadow-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" viewBox="0 0 20 20" fill="currentColor">
+          <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+        </svg>
+      </button>
+    </div>
+
+    {/* Pass turn button remains the same */}
+    {currentPlayerIndex === players.findIndex((p) => p.id === playerId) &&
+      !hasPlayablePrimes() && (
+        <button
+          onClick={() => socket.emit("passTurn", { gameCode, playerId })}
+          className="mt-4 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors duration-200 flex items-center justify-center gap-2"
+        >
+          <span>Pass Turn</span>
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M14 5l7 7m0 0l-7 7m7-7H3"
+            />
+          </svg>
+        </button>
+      )}
+  </div>
+);
   };
 
   return (
