@@ -141,7 +141,7 @@ const AdminRegistration = () => {
             placeholder="Name"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="w-[80%] h-[83px] p-4 mb-[45px] bg-[#F4F5F6] rounded-[41px] text-[30px] font-['Inter']"
+            className="w-[90%] h-[83px] p-4 mb-[45px] bg-[#F4F5F6] rounded-[41px] text-[30px] font-['Inter']"
             required
           />
 
@@ -151,7 +151,7 @@ const AdminRegistration = () => {
             placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-[80%] h-[83px] p-4 mb-[45px] bg-[#F4F5F6] rounded-[41px] text-[30px] font-['Inter']"
+            className="w-[90%] h-[83px] p-4 mb-[45px] bg-[#F4F5F6] rounded-[41px] text-[30px] font-['Inter']"
             required
           />
 
@@ -161,7 +161,7 @@ const AdminRegistration = () => {
             placeholder="School"
             value={school}
             onChange={(e) => setSchool(e.target.value)}
-            className="w-[80%] h-[83px] p-4 mb-[45px] bg-[#F4F5F6] rounded-[41px] text-[30px] font-['Inter']"
+            className="w-[90%] h-[83px] p-4 mb-[45px] bg-[#F4F5F6] rounded-[41px] text-[30px] font-['Inter']"
             required
           />
 
@@ -171,7 +171,7 @@ const AdminRegistration = () => {
             placeholder="Campus"
             value={campus}
             onChange={(e) => setCampus(e.target.value)}
-            className="w-[80%] h-[83px] p-4 mb-[45px] bg-[#F4F5F6] rounded-[41px] text-[30px] font-['Inter']"
+            className="w-[90%] h-[83px] p-4 mb-[45px] bg-[#F4F5F6] rounded-[41px] text-[30px] font-['Inter']"
             required
           />
 
@@ -181,7 +181,7 @@ const AdminRegistration = () => {
             placeholder="Create password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            className="w-[80%] h-[83px] p-4 mb-[45px] bg-[#F4F5F6] rounded-[41px] text-[30px] font-['Inter']"
+            className="w-[90%] h-[83px] p-4 mb-[45px] bg-[#F4F5F6] rounded-[41px] text-[30px] font-['Inter']"
             required
           />
 
@@ -191,14 +191,14 @@ const AdminRegistration = () => {
             placeholder="Re-enter password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-[80%] h-[83px] p-4 mb-[80px] bg-[#F4F5F6] rounded-[41px] text-[30px] font-['Inter']"
+            className="w-[90%] h-[83px] p-4 mb-[80px] bg-[#F4F5F6] rounded-[41px] text-[30px] font-['Inter']"
             required
           />
 
           {/* Register Button */}
           <button
             type="submit"
-            className="w-[80%] h-[83px] bg-[#28A8E0] text-white text-[40px] font-['Alfa_Slab_One'] rounded-[41px]"
+            className="w-[90%] h-[83px] bg-[#28A8E0] text-white text-[40px] font-['Alfa_Slab_One'] rounded-[41px]"
           >
             Register
           </button>
