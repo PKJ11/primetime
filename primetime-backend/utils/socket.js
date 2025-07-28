@@ -274,11 +274,11 @@ const initSocket = (server) => {
         const card = player.cards[cardIndex];
 
         // Auto-pass if no playable primes
-    if (!hasPlayablePrimes(player.cards, gameState.floorCards)) {
-      console.log(`Player ${playerId} has no playable primes - forcing pass`);
-      await passTurnAutomatically(gameCode, playerId);
-      return;
-    }
+        if (!hasPlayablePrimes(player.cards, gameState.floorCards)) {
+          console.log(`Player ${playerId} has no playable primes - forcing pass`);
+          await passTurnAutomatically(gameCode, playerId);
+          return;
+        }
         if (!card) {
           console.log("Play rejected: Invalid card index");
           socket.emit("error", "Invalid card index");
