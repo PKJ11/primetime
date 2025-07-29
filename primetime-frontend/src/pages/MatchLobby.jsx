@@ -132,6 +132,11 @@ const PrimeTime = () => {
     return primeFactors.every((factor) => floorCards.includes(factor));
   };
 
+  const floorCardCounts = floorCards.reduce((acc, card) => {
+    acc[card] = (acc[card] || 0) + 1;
+    return acc;
+  }, {});
+
   const isCardPlayable = (card) => {
     if (floorCards.length === 0) return card === 1;
     return isPrime(card) || areAllPrimeFactorsOnFloor(card, floorCards);
@@ -222,6 +227,13 @@ const PrimeTime = () => {
     const currentPlayer = players.find((p) => p.id === playerId);
     if (!currentPlayer) return null;
 
+    // Define hasTwoChoices here for use in button rendering
+    const hasPlayableCards = currentPlayer.cards.some((c) =>
+      isCardPlayable(c)
+    );
+    const canPassTurn = !hasPlayablePrimes();
+    const hasTwoChoices = hasPlayableCards && canPassTurn;
+
     return (
       <div className="bg-white p-4 rounded-lg shadow-md mt-4">
       
@@ -245,6 +257,9 @@ const PrimeTime = () => {
                 currentPlayerIndex ===
                   players.findIndex((p) => p.id === playerId) &&
                 isCardPlayable(card);
+
+              const isDisabled = hasTwoChoices && isPlayable;
+
               const isPrime = [
                 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59,
               ].includes(card);
@@ -256,12 +271,12 @@ const PrimeTime = () => {
               return (
                 <SwiperSlide key={index} className="!w-[20%]">
                   {" "}
-                  {/* Each slide takes exactly 20% width */}
+                  {/* Each slide takes exactly 20% width */} 
                   <div
                     className={`relative flex flex-col items-center justify-center h-28 w-20 rounded-lg overflow-hidden cursor-pointer transition-transform duration-200 hover:scale-105 mx-1 ${
-                      isPlayable ? "" : "opacity-60"
+                      isDisabled ? "opacity-40 cursor-not-allowed" : isPlayable ? "" : "opacity-60"
                     }`}
-                    onClick={isPlayable ? () => playCard(index) : undefined}
+                    onClick={!isDisabled && isPlayable ? () => playCard(index) : undefined}
                   >
                     {/* Card background with rays */}
                     <div
@@ -309,7 +324,7 @@ const PrimeTime = () => {
 
         {/* Pass turn button remains the same */}
         {currentPlayerIndex === players.findIndex((p) => p.id === playerId) &&
-          !hasPlayablePrimes() && (
+          (hasTwoChoices || !hasPlayablePrimes()) && (
             <button
               onClick={() => socket.emit("passTurn", { gameCode, playerId })}
               className="mt-4 px-4 py-2 bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors duration-200 flex items-center justify-center gap-2"
@@ -359,14 +374,27 @@ const PrimeTime = () => {
         <div className="mb-6 bg-white p-4 rounded-lg">
           <h2 className="text-xl font-semibold mb-4">Floor Cards</h2>
           <div className="flex flex-wrap">
-            {availableCards.map((card) => (
-              <div key={card} className="p-1">
-                <Card
-                  number={card}
-                  label={floorCards.includes(card) ? "ON FLOOR" : ""}
-                />
-              </div>
-            ))}
+            {availableCards.map((card, index) => {
+              // Check if a card with this number is on the floor
+              const isOnFloor = (floorCardCounts[card] || 0) > 0;
+
+              // If we mark this card, we decrement the count so we don't
+              // mark extra cards of the same number.
+              if (isOnFloor) {
+                floorCardCounts[card]--;
+              }
+
+              return (
+                // BUG FIX 1: Use the unique `index` for the key
+                <div key={index} className="p-1">
+                  <Card
+                    number={card}
+                    // BUG FIX 2: Use our calculated `isOnFloor` boolean
+                    label={isOnFloor ? "ON FLOOR" : ""}
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
 
